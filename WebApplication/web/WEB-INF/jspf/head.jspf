@@ -1,0 +1,10 @@
+<%@ page pageEncoding="UTF-8" %>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Ipse Dixit - <%= request.getAttribute("pageTitle") %></title>
+        
+        <link rel="stylesheet" type="text/css" href="/WebApplication/style-sheets/site.css" />
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" />      
+        
+        <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="/WebApplication/js/site.js"></script>

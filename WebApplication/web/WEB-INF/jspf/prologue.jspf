@@ -1,0 +1,48 @@
+       <div id="top">            
+            <div class="left">
+                <span>Progetto per il corso ASW 14-15</span> 
+            </div>           
+            <div class="right">
+                <span>Roberto Casadei</span>
+            </div>   
+            <div class="center">
+                <span>Ipse Dixit</span>
+            </div>
+        </div>
+        
+        <div id="container">
+            
+            <div id="header">
+                <div id="hinner">
+                    <span id="headerbar"> 
+                        <a href="/WebApplication/index.jsp"><i class="fa fa-sitemap"></i></a>
+                        <span id="pagetitle"></span>  
+                    </span>
+                </div>
+            </div>
+
+            <div id="menu">
+                <ul>
+                    <li><a href="/WebApplication/index.jsp">Index</a></li>
+                    <li><a href="/WebApplication/html/about.html" title="About">About</a></li>
+                    <li class="menu_separator"></li>
+                    <% if(session.getAttribute("username")==null){ %>
+                    <li><a href="/WebApplication/html/register.html" title="New user">Register</a></li>
+                    <li><a href="/WebApplication/html/login.html" title="Login">Login</a></li>
+                    <% } else { %>
+                    <li><a href="/WebApplication/Logout">Logout</a></li>
+                    <li><a href="/WebApplication/html/new_game.html" title="New Game">New game</a></li>
+                    <li><a href="/WebApplication/ShowMatches" title="Join a Game">Join a game</a></li>                    
+                    <% } %>
+                    <!--
+                    <li class="menu_separator"></li>
+                    <li><a href="jsp/observe.jsp" title="Observe a Game">Observe a game</a></li>
+                    <li><a href="#">Statistics</a></li>
+                    <li><a href="#">Rules</a></li>
+                    -->
+                </ul>
+            </div>
+
+            <div id="content_container">
+                
+                <div id="content">

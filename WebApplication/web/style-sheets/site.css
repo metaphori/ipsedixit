@@ -1,0 +1,344 @@
+/* 
+    Created on : 20-Dec-2014, 12:59:31
+    Author     : Roberto Casadei <roberto.casadei12@studio.unibo.it>
+*/
+
+/* Reset CSS */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+        font-family: Tahoma, Verdana, Segoe, sans-serif;
+        background-color:#ededed;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+
+/* Main page blocks */
+
+#top {
+    position:fixed;
+    top:0;
+    height:40px;
+    background-color: #343434;
+    border-bottom:2px solid #000;
+    color:#eee;
+    width:100%; 
+    /*border-radius: 0px 0px 20px 20px;*/
+}
+
+#container {
+    margin-top:42px;
+    margin-left:2%;
+    margin-right:2%;
+    width:96%;
+    background-color: #366AC9;
+}
+
+#header{
+    background-color: #ededed;
+    height:auto;
+}
+
+#header #hinner {
+    margin-left:0px;
+    margin-right:0px;
+    width:auto;
+    border-right:20px solid #366AC9;
+    background-color:#366AC9;
+    border-radius:0px 0px 20px 0px;
+}
+
+#content_container {
+    margin-left:150px;
+    border:1px solid #ababab;
+    border:10px solid #ededed;
+    background-color:#ededed;
+    border-radius:20px 0px 0px 0px; 
+    padding:20px;
+}
+
+#content {
+    min-height:400px;
+}
+
+#headerbar {
+    display:block;
+    font-size:100%;
+    font-weight:bold;
+    color:#fff;
+    margin-left:200px;
+    padding:10px;
+}
+
+#menu {
+    float:left;
+    width:150px;
+    background-color:#366AC9;
+    padding-bottom:50px;
+}
+
+#footer{
+    background-color: #343434;
+    border-top:2px solid #000;
+    color:#eee;
+    height:200px;
+    width:100%;
+    /*border-radius: 20px 20px 0px 0px;*/
+}
+
+.clearer { 
+    clear:both; 
+}
+
+.left{
+    float:left;
+    width:20%;
+    text-align:center;
+}
+
+.right{
+    float:right;
+    width:20%;
+    text-align:right;
+}
+
+.center{
+    text-align:center;
+    margin:0 22%;
+    width:auto;
+}
+
+#top h1 {
+    color:#eee;
+    font-weight:bold;
+    text-align:center;
+}
+
+#header a:link, #header a:visited, #header a.active {
+    color:#ddd;
+}
+#header a:hover{
+    color:#fff;
+}
+
+#menu a { 
+    display:block; 
+    color:#ededed; 
+    text-decoration: none; 
+    background-color:#366AC9; 
+    padding:5px; 
+    border:1px solid #5A8FF2;
+    font-size:90%;
+    font-weight:bolder;
+    border-radius:10px;
+    text-align:center;
+}
+#menu a:hover { color:#fff; background-color:#5A8FF2;}
+#menu ul { margin-top:20px; }
+#menu li { margin:20px 10px 0px 10px; padding:0; display:block;}
+#menu li .menu_separator { border-bottom:1px solid #82ADFF; margin:0; padding:0; }
+#menu li .selected { background-color:#5A8FF2; }
+#menu li .selected { border-color:#1B3C6B;}
+
+/*************/
+/* Text */
+/*************/
+
+#todo {
+    text-align:center;
+    margin:20px;
+    font-size:115%;
+    color:#1B3C6B;
+    font-weight:bold;
+}
+
+#top span, #footer span{
+    display:inline-block;
+    margin:10px;
+    font-weight: bold;
+    font-size: 85%;
+    color:#ccc;
+}
+
+#content h1, #content h2 {
+    display:block;
+    font-weight:bold;
+    border-bottom:1px solid #ededed;
+    color:#444;
+    padding:2px;
+    margin:5px;  
+}
+h1{
+    font-size:150%;
+}
+h2 {
+    font-size:120%;
+}
+
+p {
+    font-size:80%;
+    color:#1B3C6B;
+    line-height:1.4em;
+    margin-bottom:6px;
+}
+
+.label{
+    font-weight:bold;
+}
+
+.formrow {
+    display:block;
+    width:100%;
+    padding:8px;
+}
+
+.formrow label {
+    display:block;
+    float:left;
+    color:#1B3C6B;
+    padding:10px;
+    font-weight:bold;
+    font-size:80%;
+    width:20%;
+}
+
+.formrow input, .formrow select {
+    display:block;
+    width:auto;
+    border:2px solid #558;
+    border-radius:4px;
+    color:#1B3C6B;
+    padding:5px;
+    margin-right:40%;
+}
+
+
+
+
+#content ol, #content ul{
+    margin:10px;
+}
+#content li {
+    list-style: decimal;
+    margin:10px;
+}
+
+/*************/
+/* Game UI styles */
+/*************/
+
+#table {
+    float:left;
+    background-color:#5A8FF2;
+    width:60%;
+}
+
+#table h1 { color:#fff; }
+
+#playerpanel{
+    float:left;
+    background-color:#ddd;
+    width:60%;
+}
+
+#gameinfo{
+    float:right;
+    width:30%;
+    background-color:#82ADFF;
+    height:auto;
+    padding:10px;
+    border-radius:4px;
+    color:#ededed;
+}
+
+#tablecards div, #playerpanel div{
+    margin:10px;
+}
+#tablecards, #playercards{
+    text-align:center;
+}
+#tablecards img, #playercards img { margin: 0 2px; border:2px solid #fff; }
+#tablecards img:hover, #playercards img:hover { border-color:#000; }
+
+div.dixitImgDiv { display:inline-block; }
+
+#table p {
+    color:#1B3C6B;
+    display:block;
+    text-align:center;
+    font-size:110%;
+    margin:5px;
+}
+#clue {
+    font-weight:bold;
+}
+
+#gameinfo h1 {
+    color:#fff;
+}
+#gameinfo p { color:#ddd; font-size:100%; }
+
+table {
+    width:100%;
+}
+table thead {
+    font-weight:bold;
+    background-color:#ededed;
+    color:#1B3C6B;
+}
+table td {
+    border:1px solid #ababab;
+    padding:4px;
+}
+
+input.fancybutton{
+    border:3px solid #1B3C6B;
+    background-color: #5A8FF2;
+    color:#fff;
+    font-weight:bold;
+    padding:10px;
+    margin-bottom:20px;
+    border-radius: 15px;
+}
+input.fancybutton:hover{
+    background-color: #82ADFF;
+}
