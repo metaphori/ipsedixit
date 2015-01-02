@@ -1,4 +1,4 @@
-package asw1022.servlets;
+package asw1022.services;
 
 import javax.servlet.*;
 import java.io.*;

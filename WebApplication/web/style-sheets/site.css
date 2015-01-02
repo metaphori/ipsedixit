@@ -3,7 +3,9 @@
     Author     : Roberto Casadei <roberto.casadei12@studio.unibo.it>
 */
 
-/* Reset CSS */
+/*************/
+/* Reset css */
+/*************/
 
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
@@ -52,47 +54,34 @@ table {
 }
 
 
+/********************/
 /* Main page blocks */
+/********************/
 
 #top {
-    position:fixed;
-    top:0;
-    height:40px;
-    background-color: #343434;
-    border-bottom:2px solid #000;
+    background-color: #1B3C6B;
+    /*border-bottom:5px solid lightslategray;*/
     color:#eee;
     width:100%; 
-    /*border-radius: 0px 0px 20px 20px;*/
 }
 
 #container {
-    margin-top:42px;
-    margin-left:2%;
+    margin-left:0;
     margin-right:2%;
     width:96%;
     background-color: #366AC9;
 }
 
 #header{
-    background-color: #ededed;
-    height:auto;
+    background-color: #366AC9;
 }
 
-#header #hinner {
-    margin-left:0px;
-    margin-right:0px;
-    width:auto;
-    border-right:20px solid #366AC9;
-    background-color:#366AC9;
-    border-radius:0px 0px 20px 0px;
-}
 
 #content_container {
-    margin-left:150px;
-    border:1px solid #ababab;
+    margin-left:180px;
     border:10px solid #ededed;
     background-color:#ededed;
-    border-radius:20px 0px 0px 0px; 
+    border-radius:20px 0px 0px 20px; 
     padding:20px;
 }
 
@@ -109,6 +98,16 @@ table {
     padding:10px;
 }
 
+#leftmenu {
+    float:left;
+    width:20px;
+    background-color:#ededed;
+    border:10px solid #ededed;
+    border-left:0;
+    border-radius:0px 20px 20px 0px;     
+    height:100%;
+}
+
 #menu {
     float:left;
     width:150px;
@@ -117,8 +116,8 @@ table {
 }
 
 #footer{
-    background-color: #343434;
-    border-top:2px solid #000;
+    background-color: #1B3C6B;
+    border-top:8px solid #366AC9;
     color:#eee;
     height:200px;
     width:100%;
@@ -131,19 +130,19 @@ table {
 
 .left{
     float:left;
-    width:20%;
-    text-align:center;
+    width:30%;
+    text-align:left;
 }
 
 .right{
+    width:30%;
     float:right;
-    width:20%;
     text-align:right;
 }
 
 .center{
     text-align:center;
-    margin:0 22%;
+    margin:0 33%;
     width:auto;
 }
 
@@ -183,6 +182,10 @@ table {
 /* Text */
 /*************/
 
+.error {
+    color:#a00;
+}
+
 #todo {
     text-align:center;
     margin:20px;
@@ -191,9 +194,9 @@ table {
     font-weight:bold;
 }
 
-#top span, #footer span{
+#top span{
     display:inline-block;
-    margin:10px;
+    padding:10px;
     font-weight: bold;
     font-size: 85%;
     color:#ccc;

@@ -11,54 +11,42 @@
     <context-param>
         <param-name>cardDB</param-name>
         <param-value>WEB-INF/xml/cardDB.xml</param-value>
-    </context-param>    
-    <servlet>
-        <servlet-name>NewGame</servlet-name>
-        <servlet-class>asw1022.servlets.NewGameServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>Logout</servlet-name>
-        <servlet-class>asw1022.servlets.LogoutServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>Register</servlet-name>
-        <servlet-class>asw1022.servlets.RegisterServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>Login</servlet-name>
-        <servlet-class>asw1022.servlets.LoginServlet</servlet-class>
-    </servlet>
+    </context-param>
     <servlet>
         <servlet-name>Dixit</servlet-name>
-        <servlet-class>asw1022.servlets.Dixit</servlet-class>
+        <servlet-class>asw1022.services.Dixit</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>ShowMatches</servlet-name>
-        <servlet-class>asw1022.servlets.ShowMatchesServlet</servlet-class>
+        <servlet-name>HomeController</servlet-name>
+        <servlet-class>asw1022.controllers.HomeController</servlet-class>
     </servlet>
-    <servlet-mapping>
-        <servlet-name>NewGame</servlet-name>
-        <url-pattern>/NewGame</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>Logout</servlet-name>
-        <url-pattern>/Logout</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>Register</servlet-name>
-        <url-pattern>/Register</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>Login</servlet-name>
-        <url-pattern>/Login</url-pattern>
-    </servlet-mapping>
+    <servlet>
+        <servlet-name>UserController</servlet-name>
+        <servlet-class>asw1022.controllers.UserController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>GameController</servlet-name>
+        <servlet-class>asw1022.controllers.GameController</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>Dixit</servlet-name>
         <url-pattern>/Dixit</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>ShowMatches</servlet-name>
-        <url-pattern>/ShowMatches</url-pattern>
+        <servlet-name>HomeController</servlet-name>
+        <url-pattern>/Home</url-pattern>
+        <url-pattern>/About</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>UserController</servlet-name>
+        <url-pattern>/Register</url-pattern>
+        <url-pattern>/Login</url-pattern>
+        <url-pattern>/Logout</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>GameController</servlet-name>
+        <url-pattern>/NewMatch</url-pattern>
+        <url-pattern>/Play/*</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>

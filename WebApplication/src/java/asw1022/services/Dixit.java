@@ -1,4 +1,4 @@
-package asw1022.servlets;
+package asw1022.services;
 
 import asw1022.model.User;
 import asw1022.model.dixit.Card;
@@ -42,7 +42,7 @@ import org.w3c.dom.*;
 public class Dixit extends HttpServlet {
 
     private HashMap<String, GameExecution> matches = new HashMap<String, GameExecution>(); 
-    private HashMap<String, Object> contexts = new HashMap<String, Object>();
+    private HashMap<String, UserAsyncContext> contexts = new HashMap<String, UserAsyncContext>();
     
     private IRepository<Match> mrepo;
     private IRepository<User> urepo;
@@ -89,6 +89,7 @@ public class Dixit extends HttpServlet {
             operations(data, request, response, mngXML);
         } catch (Exception ex) { 
             logger.severe("Eccezione: " + ex.getMessage() + " \n");
+            ex.printStackTrace();
         }
     }
 
@@ -101,7 +102,9 @@ public class Dixit extends HttpServlet {
         
         Element root = data.getDocumentElement(); //name of operation is message root
         GameAction operation = getOperationFromString(root.getTagName());
-        logger.info("Received post msg " + root.getTagName());
+        Object user = request.getSession().getAttribute("username");
+        user = user == null ? "" : user.toString();
+        logger.info("###### Received msg " + root.getTagName() + " by " + user.toString());
         Document answer = null;
         OutputStream os;
         switch (operation) {
@@ -121,11 +124,12 @@ public class Dixit extends HttpServlet {
                 answer = Proceed(root, request);
                 break;
             case None:
-                answer = GetUpdate(root, request);
+                answer = GetUpdate(root, request, response);
                 break;
         }
         
         if(answer!=null){
+            logger.info("Writing response to outstream to req " + root.getTagName() + " by "+ user);
             os = response.getOutputStream();
             mngXML.transform(os, answer);
             os.close();      
@@ -164,7 +168,8 @@ public class Dixit extends HttpServlet {
             }
             
             // 2) Create a new context for the user
-            contexts.put(user, new LinkedList<Document>());             
+            UserAsyncContext userCtx = new UserAsyncContext(user);
+            contexts.put(user, userCtx);
             
             // 3) Check if the player has already joined the match
             // If so, provide him the current state of the game, AND RETURN.
@@ -197,27 +202,22 @@ public class Dixit extends HttpServlet {
                 if(!waitingForPlayers){
                     // Let's include the game status info to this very response...
                     //this.AddGameInfoSubtree(answer, ge, user);
-                
+                    logger.info(">>>>>>>>>>>>>>>>> SETUP is done. New phase: " + ge.getPhase());
                     // .. and also to all the other players
                     // (they will be notified asynchronously as soon as they wants update)
                     for (String destUser : contexts.keySet()) {
-                        /*if (destUser.equals(user)) {
-                            continue;
-                        }*/
                         Document data = mngXML.newDocument("Update");
                         this.AddGameInfoSubtree(data, ge, destUser);
-                        
-                        Object value = contexts.get(destUser);
-                        logger.info("Communicate " + destUser + " that " + user + 
-                                " has joined and we are done. The game can start.");
-                        if (value instanceof AsyncContext) {
-                            OutputStream aos = ((AsyncContext) value).getResponse().getOutputStream();
-                            mngXML.transform(aos, data);
-                            aos.close();
-                            ((AsyncContext) value).complete();
-                            contexts.put(destUser, new LinkedList<Document>());
-                        } else {
-                            ((LinkedList<Document>) value).addLast(data);
+
+                        UserAsyncContext ctx = contexts.get(destUser);
+                        synchronized(ctx){
+                            ctx._queue.add(data);
+                            AsyncContext asyncCtx = ctx._async.get();
+                            if (asyncCtx!=null && ctx._async.compareAndSet(asyncCtx,null)){
+                                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                                mngXML.transform(os, data);
+                                asyncCtx.complete();
+                            }
                         }
                     } // end for(contexts)
                 }
@@ -265,35 +265,25 @@ public class Dixit extends HttpServlet {
 
             // Let's include the game status info to this very response...
             //this.AddGameInfoSubtree(answer, ge, user);
-
+            logger.info(">>>>>>>>>>>>>>>>> SET_PHRASE is done. New phase: " + ge.getPhase());
             // .. and also to all the other players
             // (they will be notified asynchronously as soon as they wants update)
 
-            for (String destUser : contexts.keySet()) {
-                /*
-                if (destUser.equals(user)) {
-                    continue;
-                }
-                */
-                
-                Document data = mngXML.newDocument("Update");
-                this.AddGameInfoSubtree(data, ge, destUser);
-            
-                Object value = contexts.get(destUser);
-                logger.info("Communicate " + destUser + " that " + user
-                        + " has set the phrase and the game can proceed.");
-                if (value instanceof AsyncContext) {
-                    OutputStream aos = ((AsyncContext) value).getResponse().getOutputStream();
-                    mngXML.transform(aos, data);
-                    aos.close();
-                    ((AsyncContext) value).complete();
-                        List<Document> docsQueue = new LinkedList<Document>();
-                        docsQueue.add(data);
-                        contexts.put(destUser, docsQueue);
-                } else {
-                    ((LinkedList<Document>) value).addLast(data);
-                }
-            } // end for(contexts)
+                    for (String destUser : contexts.keySet()) {
+                        Document data = mngXML.newDocument("Update");
+                        this.AddGameInfoSubtree(data, ge, destUser);
+
+                        UserAsyncContext ctx = contexts.get(destUser);
+                        synchronized(ctx){
+                            ctx._queue.add(data);
+                            AsyncContext asyncCtx = ctx._async.get();
+                            if (asyncCtx!=null && ctx._async.compareAndSet(asyncCtx,null)){
+                                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                                mngXML.transform(os, data);
+                                asyncCtx.complete();
+                            }
+                        }
+                    } // end for(contexts)
 
             return answer;
         } // end synchronized(this)
@@ -332,31 +322,25 @@ public class Dixit extends HttpServlet {
             if (ge.getPhase() == GamePhase.Vote) {
                 // Let's include the game status info to this very response...
                 //this.AddGameInfoSubtree(answer, ge, user);
-
+logger.info(">>>>>>>>>>>>>>>>> SELECTCARD is done. New phase: " + ge.getPhase());
                     // .. and also to all the other players
                 // (they will be notified asynchronously as soon as they wants update)
 
-                for (String destUser : contexts.keySet()) {
-                    /*if (destUser.equals(user)) {
-                        continue;
-                    }*/
-                    
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser); 
-                
-                    Object value = contexts.get(destUser);
-                    logger.info("Communicate " + destUser + " that " + user
-                            + " has selected a card and we are done. We can vote.");
-                    if (value instanceof AsyncContext) {
-                        OutputStream aos = ((AsyncContext) value).getResponse().getOutputStream();
-                        mngXML.transform(aos, data);
-                        aos.close();
-                        ((AsyncContext) value).complete();
-                        contexts.put(destUser, new LinkedList<Document>());
-                    } else {
-                        ((LinkedList<Document>) value).addLast(data);
-                    }
-                } // end for(contexts)
+                    for (String destUser : contexts.keySet()) {
+                        Document data = mngXML.newDocument("Update");
+                        this.AddGameInfoSubtree(data, ge, destUser);
+
+                        UserAsyncContext ctx = contexts.get(destUser);
+                        synchronized(ctx){
+                            ctx._queue.add(data);
+                            AsyncContext asyncCtx = ctx._async.get();
+                            if (asyncCtx!=null && ctx._async.compareAndSet(asyncCtx,null)){
+                                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                                mngXML.transform(os, data);
+                                asyncCtx.complete();
+                            }
+                        }
+                    } // end for(contexts)
             } // end if(phase="vote")
             return answer;
         } // end synchronized(this)
@@ -396,31 +380,25 @@ public class Dixit extends HttpServlet {
                     || ge.getPhase() == GamePhase.End) {
                 // Let's include the game status info to this very response...
                 //this.AddGameInfoSubtree(answer, ge, user);
-
+logger.info(">>>>>>>>>>>>>>>>> VOTE is done. New phase: " + ge.getPhase());
                     // .. and also to all the other players
                 // (they will be notified asynchronously as soon as they wants update)
 
-                for (String destUser : contexts.keySet()) {
-                    /*if (destUser.equals(user)) {
-                        continue;
-                    }*/
-                    
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser); 
-                
-                    Object value = contexts.get(destUser);
-                    logger.info("Communicate " + destUser + " that " + user
-                            + " has voted a card and we are done. We can vote.");
-                    if (value instanceof AsyncContext) {
-                        OutputStream aos = ((AsyncContext) value).getResponse().getOutputStream();
-                        mngXML.transform(aos, data);
-                        aos.close();
-                        ((AsyncContext) value).complete();
-                        contexts.put(destUser, new LinkedList<Document>());
-                    } else {
-                        ((LinkedList<Document>) value).addLast(data);
-                    }
-                } // end for(contexts)
+                    for (String destUser : contexts.keySet()) {
+                        Document data = mngXML.newDocument("Update");
+                        this.AddGameInfoSubtree(data, ge, destUser);
+
+                        UserAsyncContext ctx = contexts.get(destUser);
+                        synchronized(ctx){
+                            ctx._queue.add(data);
+                            AsyncContext asyncCtx = ctx._async.get();
+                            if (asyncCtx!=null && ctx._async.compareAndSet(asyncCtx,null)){
+                                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                                mngXML.transform(os, data);
+                                asyncCtx.complete();
+                            }
+                        }
+                    } // end for(contexts)
             } // end if(phase="vote")
             return answer;
         } // end synchronized(this)
@@ -459,33 +437,25 @@ public class Dixit extends HttpServlet {
             if (ge.getPhase() == GamePhase.SetPhrase) {
                 // Let's include the game status info to this very response...
                 //this.AddGameInfoSubtree(answer, ge, user);
-
+logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
                     // .. and also to all the other players
                 // (they will be notified asynchronously as soon as they wants update)
 
-                for (String destUser : contexts.keySet()) {
-                    /*if (destUser.equals(user)) {
-                        continue;
-                    }*/
-                    
-                    logger.info("Keeping a note for " + destUser + " that we can proceed.");
-                    
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser); 
-                
-                    Object value = contexts.get(destUser);
-                    if (value instanceof AsyncContext) {
-                        OutputStream aos = ((AsyncContext) value).getResponse().getOutputStream();
-                        mngXML.transform(aos, data);
-                        aos.close();
-                        ((AsyncContext) value).complete();
-                        List<Document> docsQueue = new LinkedList<Document>();
-                        docsQueue.add(data);
-                        contexts.put(destUser, docsQueue);
-                    } else {
-                        ((LinkedList<Document>) value).addLast(data);
-                    }
-                } // end for(contexts)
+                    for (String destUser : contexts.keySet()) {
+                        Document data = mngXML.newDocument("Update");
+                        this.AddGameInfoSubtree(data, ge, destUser);
+
+                        UserAsyncContext ctx = contexts.get(destUser);
+                        synchronized(ctx){
+                            ctx._queue.add(data);
+                            AsyncContext asyncCtx = ctx._async.get();
+                            if (asyncCtx!=null && ctx._async.compareAndSet(asyncCtx,null)){
+                                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                                mngXML.transform(os, data);
+                                asyncCtx.complete();
+                            }
+                        }
+                    } // end for(contexts)
             } // end if(phase="vote")
             return answer;
         } // end synchronized(this)
@@ -496,55 +466,43 @@ public class Dixit extends HttpServlet {
     /*******************************************/
     /* Operation: GetUpdate */
     /*******************************************/    
-    public Document GetUpdate(Element root, HttpServletRequest request){
+    public synchronized Document GetUpdate(Element root, 
+            HttpServletRequest request, 
+            HttpServletResponse response) throws Exception {
         String user = (String) request.getSession().getAttribute("username");
         logger.info("User " + user + " wants to receive updates");
 
         boolean async;
-        synchronized (this) {
-            Object obj = contexts.get(user);
+        UserAsyncContext ctx = contexts.get(user);
 
-            LinkedList<Document> list = (LinkedList<Document>)contexts.get(user);
-            if (async = list.isEmpty()) {
-                AsyncContext asyncContext = request.startAsync();
-                asyncContext.setTimeout(10 * 1000);
-                asyncContext.addListener(new AsyncAdapter() {
-                    @Override
-                    public void onTimeout(AsyncEvent e) {
-                        try {
-                            ManageXML mngXML = new ManageXML();
+        if (ctx == null) {
+            logger.info("The context is null for " + user);
+            return null;
+        }
 
-                            AsyncContext asyncContext = e.getAsyncContext();
-                            HttpServletRequest reqAsync = (HttpServletRequest) asyncContext.getRequest();
-                            String user = (String) reqAsync.getSession().getAttribute("username");
-                            System.out.println("timeout event launched for: " + user);
-
-                            Document answer = mngXML.newDocument("Timeout");
-                            boolean confirm;
-                            synchronized (Dixit.this) {
-                                if (confirm = (contexts.get(user) instanceof AsyncContext)) {
-                                    contexts.put(user, new LinkedList<Document>());
-                                }
-                            }
-                            if (confirm) {
-                                OutputStream tos = asyncContext.getResponse().getOutputStream();
-                                mngXML.transform(tos, answer);
-                                tos.close();
-                                asyncContext.complete();
-                            }
-                        } catch (Exception ex) {
-                            System.out.println(ex);
-                        }
+        synchronized (ctx) {
+            if (ctx._queue.size() == 0) {
+                if(ctx._async.get()==null){
+                    logger.info("The list is empty and asyncCtx null for " + user+ " => async");
+                    AsyncContext asyncContext = request.startAsync();
+                    asyncContext.setTimeout(10 * 1000);
+                    asyncContext.addListener(ctx);
+                    if (!ctx._async.compareAndSet(null,asyncContext)){
+                        logger.severe("Eeeh?!? " + user);
+                        return null;
                     }
-                });
-                contexts.put(user, asyncContext);
+                } else{
+                    logger.severe("Error: async context not null for " + user);
+                    return null;
+                }
             } else {
-                return list.removeFirst();
+                logger.info("Synchronously return the queued message to " + user);
+                return ctx._queue.remove();
             }
-        }    
-        
+        }
         return null;
     }
+
     
     private synchronized void AddGameInfoSubtree(Document doc, GameExecution ge, String currUser) throws Exception {
         Element root = doc.getDocumentElement();
@@ -580,10 +538,8 @@ public class Dixit extends HttpServlet {
         }
         
         if(ge.getPhase()==GamePhase.Vote){
-            logger.info("Returning table cards");
             List<Card> selcards = ge.getSelectedCardsRandomly();
             if(selcards!=null && selcards.size()>0){
-                logger.info("Table cards retrieved");
                 Element selcardsElem = doc.createElement("CardsOnTable");
                 for(Card c : selcards){
                     Element card = doc.createElement("Card");

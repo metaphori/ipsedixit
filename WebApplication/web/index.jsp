@@ -10,35 +10,23 @@
 <html>
     <head>
 
-        <%@ include file="/WEB-INF/jspf/head.jspf" %>
+        <title>Ipse Dixit Splash Screen</title>
+        
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/style-sheets/splash.css" />
         
     </head>
     <body>
 
-<%@ include file="/WEB-INF/jspf/prologue.jspf" %>
+        <div id="splashtop">
+            <a id="enter" href="${pageContext.request.contextPath}/Home">Enter in Ipse Dixit</a>
+        </div>
         
-<% if(request.getAttribute("msg")!=null){ %>
-    <p class="message"><%= request.getAttribute("msg") %></p>
-    <% if(request.getAttribute("redirectUrl")!=null){ %>
-        <p class="message"><a href="<%= request.getAttribute("redirectUrl") %>"><%= request.getAttribute("destinationName") %></a>.</p>
-    <% } %>
-    <hr />
-<% } %>
-
-<h1>How to play</h1>
-
-<ol>
-    <li>Register to the site</li>
-    <li>Log in</li>
-    <li>Create a match or join an existing match</li>
-    <li>Enjoy</li>
-</ol>
-             
-<p><i class="fa fa-smile-o" style="font-size:40px;"></i></p>
-
-<%@ include file="/WEB-INF/jspf/epilogue.jspf" %>
-
-
+        <div id="splashcontent">
+            <div id="content">
+                <p>Roberto Casadei</p>
+            </div>
+        </div>
+        
     </body>
     
 </html>

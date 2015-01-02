@@ -12,14 +12,18 @@
 
         <%@ include file="/WEB-INF/jspf/head.jspf" %>
         
-        <script type="text/javascript" src="/WebApplication/js/dixit.js"></script>
+        <script type="text/javascript">
+        function getCtx(){
+            return '${pageContext.request.contextPath}';
+        }
+        </script>
+            
+        <script type="text/javascript" src="${pageContext.request.contextPath}/js/dixit.js"></script>
         
     </head>
     <body>
 
 <%@ include file="/WEB-INF/jspf/prologue.jspf" %>
-
-<%-- request.getParameter("match") --%>
 
 <div class="center" id="request">
         <input type="hidden" name="match" value="<%= request.getParameter("match") %>" />
@@ -43,9 +47,9 @@
         
 <div id="gameinfo">
     <h1>Info</h1>
-    <p id="info"><span class="label">You are </span> <span id="username"><%= session.getAttribute("username") %></span></p>
-    <p id="info"><span class="label">Turn:</span> <span id="turntxt">--</span></p>
-    <p id="info"><span class="label">Phase:</span> <span id="phasetxt">setup</span></p>
+    <p class="info"><span class="label">You are </span> <span id="username"><%= session.getAttribute("username") %></span></p>
+    <p class="info"><span class="label">Turn:</span> <span id="turntxt">--</span></p>
+    <p class="info"><span class="label">Phase:</span> <span id="phasetxt">setup</span></p>
     
     <h1>Results</h1>
     
@@ -72,14 +76,17 @@
     
     <div>
         <form>
-            <label for="clue">Clue:</label>
-            <input type="text" name="clue" id="cluetxt" disabled="true" />
-            <input type="button" value="Give it!" id="phrasebtn" disabled="true" />
+            <label for="cluetxt">Clue:</label>
+            <input type="text" name="clue" id="cluetxt" disabled="disabled" />
+            <input type="button" value="Give it!" id="phrasebtn" disabled="disabled" />
         </form>
     </div>
 </div>      
     
-<div class="clearer"></div>    
+<div class="clearer"></div>  
+
+
+<p data-bind="text: suggestion"></p>
         
 
 <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>

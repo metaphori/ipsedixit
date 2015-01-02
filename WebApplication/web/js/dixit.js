@@ -1,5 +1,17 @@
 var USER, GAME, GAMEINFO={}, MSG;
+
+function ViewModel(){
+    this.phase = ko.observable('');
+    
+    this.suggestion = ko.computed(function(){
+        return this.phase();
+    }, this);
+};
+VIEWMODEL = new ViewModel();
+
 $().ready(function(){
+    
+    ko.applyBindings(VIEWMODEL);
 
     $('form').on('submit', function(ev){
        ev.preventDefault();
@@ -32,6 +44,7 @@ $().ready(function(){
 });
 
 function performAction(action, actionData){
+    onsuccessEnd = function(res){};
     
     if(action==="join"){
         console.log("Joining the game...");
@@ -39,46 +52,37 @@ function performAction(action, actionData){
         onsuccess = function(res){
             $('#request_button').css('display','none');
             $('#todo').text("Wait for the other players to join.");
-            
-            // The response must contain game status because we may simply need
-            // to reconnect
-            var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
-            if (gameinfo) {
-                syncWithGameInfo(gameinfo);
-            }            
-            
+        };
+        onsuccessEnd = function(res){
             performAction("pop", actionData);
         };
     } else if(action==="pop"){
         console.log("Now I wait for updates...");
         data = createGameUpdateXmlData(actionData.user, actionData.match);
-        onsuccess = onGameUpdate;
+        waitForUpdate(data);
+        return;
     } else if(action==="setPhrase"){ 
         console.log("Setting phrase...");
         data = createPhraseXmlData(actionData.user, actionData.match, actionData.phrase);
     } else if(action==="selectCard"){
         console.log("Selecting card " + actionData.card);
         data = createSelectCardXmlData(actionData.user, actionData.match, actionData.card);
+        onsuccess = function(res){
+            $('#todo').text("Wait for the other players to select their card.");      
+        }
     } else if(action==="voteCard"){
         console.log("Voting card " + actionData.card);
         if(USER===GAMEINFO.turn){
             console.log("I cannot vote because it is my turn.");
             return;
         }
-        data = createVoteCardXmlData(actionData.user, actionData.match, actionData.card);        
+        data = createVoteCardXmlData(actionData.user, actionData.match, actionData.card);
     } else if(action==="proceed"){
         console.log("Proceeding to next round");
         data = createBasicXmlData("ok", actionData.user, actionData.match);
         onsuccess = function(res){
             $('#request_button').css('display','none');
             $('#todo').text("Wait for the other players to do the same."); 
-            
-            var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
-            if (gameinfo) {
-                syncWithGameInfo(gameinfo);
-            }            
-             
-            performAction("pop", actionData);
         };        
     }
     else {
@@ -87,29 +91,54 @@ function performAction(action, actionData){
     }
     
     $.ajax({
-            url: "/WebApplication/Dixit",
+            url: getCtx()+"/Dixit",
             type: "POST",
             processData: false,
             contentType: "text/xml; charset=utf-8",
             dataType: "xml",
             data: data,
             success: function(res){
-                onsuccess(res);
+                if(res){
+                    onsuccess(res);
+                    
+                    var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
+                    if (gameinfo) {
+                        syncWithGameInfo(gameinfo);
+                    }
+                    
+                    onsuccessEnd(res);
+                }
             },
             error: function(err){
                 console.log("Error: "+err);
+                if(action!=="pop")
+                    performAction("pop", actionData);                 
             }
         });    
+}
+
+function waitForUpdate(data){
+    xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            onGameUpdate(xhr.responseXML);
+        }
+    };
+    xhr.open("POST", getCtx()+"/Dixit", true);
+    xhr.send(data);    
 }
 
 function onGameUpdate(res){
     console.log("Game update: " + res);
     
-    if(res===null) return;
+    if(res===null){ 
+        return;
+    }
     
     docname = res.documentElement.tagName;
     
     if(docname==="Timeout"){
+        console.log("Timeout");
     }
     else if(docname==="Update"){
         MSG = res;
@@ -121,9 +150,12 @@ function onGameUpdate(res){
     }
     else if(docname==="End"){
         return;
+    } else{
+        return;
     }
     
     performAction("pop", {user: USER, match: GAME});
+    
 }
 
 function createBasicXmlData(rootName, user, match){
@@ -188,6 +220,7 @@ function syncWithGameInfo(gameinfo){
     var selection = gameinfo.getElementsByTagName("UncoveredCards")[0];
     
     GAMEINFO.phase = phase;
+    VIEWMODEL.phase(phase);
     GAMEINFO.turn = turn;
     GAMEINFO.votes = votes;
     
@@ -210,7 +243,7 @@ function syncWithGameInfo(gameinfo){
     $('#phasetxt').text(phase);
     $('#turntxt').text(turn);
     
-    var disablePhrase = (turn===USER && phase==="setPhrase") ? null : 'true';
+    var disablePhrase = (turn===USER && phase==="setPhrase") ? null : 'disabled';
     $('#phrasebtn').prop('disabled', disablePhrase);
     $('#cluetxt').prop('disabled', disablePhrase);
     
@@ -237,7 +270,7 @@ function syncWithGameInfo(gameinfo){
         if(turn===USER)
             $('#todo').text('Wait for the other players to vote.');
         else
-            $('#todo').text('Vote a card');
+            $('#todo').text('Vote a card.');
     }
     else if(phase==="results"){
         $('#todo').text('Round finished.');
@@ -254,7 +287,7 @@ function uncoverCards(selectionElem){
         to = sel[i].getAttribute("card");
         // TODO: ensure card names do not contain spaces or illegal chars wrt css selectors
         isTurn = USER===GAMEINFO.turn ? '*' : '';
-        $('#tableImgDiv'+to).append("<p>BY: <u>"+by+isTurn+"</u></p>");
+        $('#tableImgDiv'+to+' div').append("<p>BY: <u>"+by+isTurn+"</u></p>");
     }    
 }
 
@@ -264,7 +297,7 @@ function setVotes(votesElem){
         by = votes[i].getAttribute("by");
         to = votes[i].getAttribute("toCard");
         // TODO: ensure card names do not contain spaces or illegal chars wrt css selectors
-        $('#tableImgDiv'+to).append("<p>VOTE: "+by+"</p>");
+        $('#tableImgDiv'+to+' div').append("<p>VOTE: "+by+"</p>");
     }
 }
 
@@ -292,6 +325,7 @@ function setTableCards(cards){
                 performAction('voteCard', {user: USER, match: GAME, card: $(this).attr('name')});
             });
         }
+        imgcont.append('<div>');
         table.append(imgcont);
     }    
 }

@@ -8,31 +8,38 @@
             <div class="center">
                 <span>Ipse Dixit</span>
             </div>
+           
+           <div class="clearer"></div>
         </div>
         
-        <div id="container">
-            
-            <div id="header">
-                <div id="hinner">
-                    <span id="headerbar"> 
-                        <a href="/WebApplication/index.jsp"><i class="fa fa-sitemap"></i></a>
-                        <span id="pagetitle"></span>  
-                    </span>
-                </div>
+        <div id="header">
+            <div id="hinner">
+                <span id="headerbar"> 
+                    <a href="/WebApplication/index.jsp"><i class="fa fa-sitemap"></i></a>
+                    <span id="pagetitle">
+                        <% if(request.getAttribute("PageTitle")!=null){ out.print(request.getAttribute("PageTitle")); } %>
+                    </span>  
+                </span>
             </div>
+        </div>
 
+        <div id="container">
+
+            <div id="leftmenu"></div>
+            
             <div id="menu">
                 <ul>
-                    <li><a href="/WebApplication/index.jsp">Index</a></li>
-                    <li><a href="/WebApplication/html/about.html" title="About">About</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Home">Index</a></li>
+                    <li><a href="${pageContext.request.contextPath}/About">About</a></li>
                     <li class="menu_separator"></li>
                     <% if(session.getAttribute("username")==null){ %>
-                    <li><a href="/WebApplication/html/register.html" title="New user">Register</a></li>
-                    <li><a href="/WebApplication/html/login.html" title="Login">Login</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Register">Register</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Login">Login</a></li>
                     <% } else { %>
-                    <li><a href="/WebApplication/Logout">Logout</a></li>
-                    <li><a href="/WebApplication/html/new_game.html" title="New Game">New game</a></li>
-                    <li><a href="/WebApplication/ShowMatches" title="Join a Game">Join a game</a></li>                    
+                    <li><a href="${pageContext.request.contextPath}/Logout">Logout</a></li>
+                    <li><a href="${pageContext.request.contextPath}/NewMatch">New match</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Play">Join a match</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Play?match=random">Random match</a></li>
                     <% } %>
                     <!--
                     <li class="menu_separator"></li>

@@ -197,7 +197,8 @@ public class GameExecution {
             // Moreover, each players get a point for each vote
             for(Player voter : votes.keySet()){
                 Player voted = votes.get(voter);
-                if(voted==voter) continue; // one cannot vote himself
+                // one cannot vote himself, and are not counted for the player in turn
+                if(voted==voter || voted==this.turn) continue;
                 
                 int np = this.pointsPerPlayer.get(voted);
                 this.pointsPerPlayer.put(voted, np+1);
