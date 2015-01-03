@@ -182,6 +182,13 @@ table {
 /* Text */
 /*************/
 
+#footer p{
+    text-align:center;
+}
+#footer img {
+    margin:20px;
+}
+
 .error {
     color:#a00;
 }
@@ -218,7 +225,6 @@ h2 {
 }
 
 p {
-    font-size:80%;
     color:#1B3C6B;
     line-height:1.4em;
     margin-bottom:6px;
@@ -240,7 +246,6 @@ p {
     color:#1B3C6B;
     padding:10px;
     font-weight:bold;
-    font-size:80%;
     width:20%;
 }
 
@@ -299,10 +304,12 @@ p {
 #tablecards, #playercards{
     text-align:center;
 }
-#tablecards img, #playercards img { margin: 0 2px; border:2px solid #fff; }
+#tablecards img, #playercards img { margin: 0; border:2px solid #fff; }
 #tablecards img:hover, #playercards img:hover { border-color:#000; }
 
-div.dixitImgDiv { display:inline-block; }
+div.dixitImgDiv { display:inline-block; vertical-align: top; }
+
+img.selected { border:2px solid #5A8FF2; }
 
 #table p {
     color:#1B3C6B;
@@ -316,9 +323,11 @@ div.dixitImgDiv { display:inline-block; }
 }
 
 #gameinfo h1 {
+    margin-top:15px;
     color:#fff;
 }
 #gameinfo p { color:#ddd; font-size:100%; }
+#gameinfo a { color:#C6FFFF; text-decoration:none; text-align:center; display:block; font-weight:bold;}
 
 table {
     width:100%;

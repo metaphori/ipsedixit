@@ -1,57 +1,129 @@
-var USER, GAME, GAMEINFO={}, MSG;
+var USER, GAME, MSG;
 
 function ViewModel(){
-    this.phase = ko.observable('');
+    this.match = ko.observable(null);
+    this.phase = ko.observable(null);
+    this.turn = ko.observable(null);
+    this.me = ko.observable(null);
+    this.clue = ko.observable(null);
+    this.mycards = ko.observableArray([]);
+    this.tablecards = ko.observableArray([]);
+    this.players = ko.observableArray([]);
+    this.winner  = ko.observable(null);
+    
+    this.selectedCard = ko.observable(null);
+    this.votedCard = ko.observable(null);
+    this.joined = ko.observable(false);
+    this.proceeded = ko.observable(false);
     
     this.suggestion = ko.computed(function(){
-        return this.phase();
+        phase = this.phase();
+        if(!phase){
+            return this.joined() ? 
+                "Wait for the other players to join the game":
+                "Enter the game";
+        } else if(phase==="setPhrase"){
+            // cleanup at beginning of every round
+            this.tablecards.removeAll();
+            this.selectedCard(null);
+            this.votedCard(null);
+            this.joined(false);
+            this.proceeded(false);
+            
+            return this.turn()===this.me() ? 
+                "Tell a clue." : 
+                "Wait " + this.turn() + " to tell a clue.";
+        } else if(phase==="selectCard"){
+            return this.selectedCard() ? 
+                "Wait for the other players to select their card." : 
+                "Now, select a card";
+        } else if(phase==="vote"){
+            if(this.votedCard()){
+                return "Wait for the other players to vote.";
+            } else{
+                return (this.turn()===this.me()) ? 
+                    "Wait for the other players to vote." : 
+                    "Vote a card.";
+            }
+        } else if(phase==="results"){
+            return this.proceeded() ? 
+                "Wait for the other players to do the same." : 
+                "Round finished.";
+        } else if(phase==="end"){
+            return "END OF MATCH. Winner is " + VIEWMODEL.winner();
+        }      
+    }, this);    
+    
+    this.canTellClue = ko.computed(function(){
+        if(this.phase()==="setPhrase" && this.turn()===this.me())
+            return true;
+        return false;
+    }, this);
+    
+    this.canSelectCard = ko.computed(function(){
+        if(this.phase()==="selectCard")
+            return true;
+        return false;        
+    }, this);
+    
+    this.canVoteCard = ko.computed(function(){
+        if(this.phase()==="vote" && this.turn()!==this.me())
+            return true;
+        return false; 
+    }, this);
+    
+    this.join = function(){
+        performAction("join", {user: this.me(), match: this.match()});
+    };
+    
+    this.setphrase = function(){
+        myclue = $('#cluetxt').val();
+        performAction("setPhrase", {user: this.me(), match: this.match(), phrase: myclue});
+    };
+    
+    this.proceed = function(){
+        performAction("proceed", {user: this.me(), match: this.match() });
+    };
+    
+    this.request = ko.computed(function(){
+        if(!this.phase() && !this.joined()){
+            return 'Enter the game';
+        } else if(this.phase()==='results' && !this.proceeded()){
+            return 'Next';
+        }
+        return null;
+    }, this);       
+    
+    this.next_action = ko.computed(function(){
+        if(!this.phase()){
+            return this.join;
+        } else if(this.phase()==="setPhrase" && this.me()===this.turn()){
+            return this.setphrase;
+        } 
+        else if(this.phase()==='results'){
+            return this.proceed;
+        } 
+        return function(){ alert('ERROR: no next action'); }        
     }, this);
 };
+
 VIEWMODEL = new ViewModel();
 
 $().ready(function(){
     
     ko.applyBindings(VIEWMODEL);
-
-    $('form').on('submit', function(ev){
-       ev.preventDefault();
-       return false;        
-    });
-
-    $('#request_button').on('click', function(ev){
-        game = $('#request input[name=match]').prop('value');
-        user = $('#request input[name=user]').prop('value');
-        USER = user;
-        GAME = game;
-        performAction("join", {user: user, match: game});
-    });
     
-    $('#phrasebtn').on('click', function(ev){
-       performAction("setPhrase", {user: user, match: game, phrase: $('#cluetxt').val()});
-       ev.preventDefault();
-       return false;
-    });
-    
-    $('#proceedbtn').on('click', function(ev){
-       performAction("proceed", {user: user, match: game });
-       $(this).css('display','none');
-       ev.preventDefault();
-       return false;        
-    });
-    
-    // For select card, handlers are set when the cards are placed
-
 });
 
 function performAction(action, actionData){
+    onsuccess = function(res){};
     onsuccessEnd = function(res){};
     
     if(action==="join"){
         console.log("Joining the game...");
         data = createJoinXmlData(actionData.user, actionData.match);
         onsuccess = function(res){
-            $('#request_button').css('display','none');
-            $('#todo').text("Wait for the other players to join.");
+            VIEWMODEL.joined(true);
         };
         onsuccessEnd = function(res){
             performAction("pop", actionData);
@@ -65,24 +137,26 @@ function performAction(action, actionData){
         console.log("Setting phrase...");
         data = createPhraseXmlData(actionData.user, actionData.match, actionData.phrase);
     } else if(action==="selectCard"){
-        console.log("Selecting card " + actionData.card);
+        console.log("Selecting card " + actionData.card + " by " +actionData.user + " in " +actionData.match);
         data = createSelectCardXmlData(actionData.user, actionData.match, actionData.card);
         onsuccess = function(res){
-            $('#todo').text("Wait for the other players to select their card.");      
-        }
+            VIEWMODEL.selectedCard(actionData.card);
+        };
     } else if(action==="voteCard"){
         console.log("Voting card " + actionData.card);
-        if(USER===GAMEINFO.turn){
+        if(VIEWMODEL.me()===VIEWMODEL.turn()){
             console.log("I cannot vote because it is my turn.");
             return;
         }
+        onsuccess = function(res){
+            VIEWMODEL.votedCard(actionData.card);
+        };        
         data = createVoteCardXmlData(actionData.user, actionData.match, actionData.card);
     } else if(action==="proceed"){
         console.log("Proceeding to next round");
         data = createBasicXmlData("ok", actionData.user, actionData.match);
         onsuccess = function(res){
-            $('#request_button').css('display','none');
-            $('#todo').text("Wait for the other players to do the same."); 
+            VIEWMODEL.proceeded(true);
         };        
     }
     else {
@@ -103,6 +177,7 @@ function performAction(action, actionData){
                     
                     var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
                     if (gameinfo) {
+                        MSG = res;
                         syncWithGameInfo(gameinfo);
                     }
                     
@@ -204,10 +279,6 @@ function createVoteCardXmlData(user, match, cardId){
 }
 
 function syncWithGameInfo(gameinfo){
-    GAMEINFO.players = [];
-    GAMEINFO.your_cards = [];
-    GAMEINFO.table_cards = [];
-    
     console.log("Sync with game info.");
     var phase = gameinfo.getAttribute("phase");
     var turn = gameinfo.getAttribute("turn");
@@ -218,12 +289,17 @@ function syncWithGameInfo(gameinfo){
     var tablecards = gameinfo.getElementsByTagName("CardsOnTable")[0];
     var votes = gameinfo.getElementsByTagName("Votes")[0];
     var selection = gameinfo.getElementsByTagName("UncoveredCards")[0];
+    var selcard = gameinfo.getElementsByTagName("SelectedCard")[0];
+    var votedcard = gameinfo.getElementsByTagName("VotedCard")[0];
     
-    GAMEINFO.phase = phase;
+    VIEWMODEL.winner(winner);
     VIEWMODEL.phase(phase);
-    GAMEINFO.turn = turn;
-    GAMEINFO.votes = votes;
+    VIEWMODEL.turn(turn);
     
+    if(selcard)
+        VIEWMODEL.selectedCard(selcard.textContent);
+    if(votedcard)
+        VIEWMODEL.votedCard(votedcard.textContent);
     if(mycards){
         setMyCards(mycards);   
     }
@@ -232,52 +308,21 @@ function syncWithGameInfo(gameinfo){
     }    
     if(phrase){
         $('#clue').text(phrase.textContent);
+        VIEWMODEL.clue(phrase.textContent);
     }
     if(selection){
         uncoverCards(selection);
-    }    
+    }
     if(votes){
         setVotes(votes);
     }
     
-    $('#phasetxt').text(phase);
-    $('#turntxt').text(turn);
-    
-    var disablePhrase = (turn===USER && phase==="setPhrase") ? null : 'disabled';
-    $('#phrasebtn').prop('disabled', disablePhrase);
-    $('#cluetxt').prop('disabled', disablePhrase);
-    
-    resultstbody = $("#resultsbody");
-    resultstbody.html("");
+    VIEWMODEL.players.removeAll(); // reset
     for (i = 0; i < players.length; i++) {
         playerName = players[i].textContent;
         points = players[i].getAttribute("points");
-        resultstbody.append($("<tr><td>"+playerName+"</td><td>"+points+"</td></tr>"));
-        console.log("I am with " + playerName);
-        GAMEINFO.players[i] = { name: playerName, points: points };
+        VIEWMODEL.players.push({ name: playerName, points: points });
     }
-    
-    if(phase==="setPhrase"){
-        $('#tablecards').html('');
-        if(turn===USER)
-            $('#todo').text('Give the phrase, the clue for your card.');
-        else
-            $('#todo').text('Wait for ' + turn + ' to give the phrase.');
-    }
-    else if(phase==="selectCard")
-        $('#todo').text('Now, select a card.');
-    else if(phase==="vote"){
-        if(turn===USER)
-            $('#todo').text('Wait for the other players to vote.');
-        else
-            $('#todo').text('Vote a card.');
-    }
-    else if(phase==="results"){
-        $('#todo').text('Round finished.');
-        $('#proceedbtn').css('display', 'inline-block');
-    }
-    else if(phase==="end")
-        $('#todo').text("END OF MATCH. Winner is " + winner);
 }
 
 function uncoverCards(selectionElem){
@@ -286,9 +331,17 @@ function uncoverCards(selectionElem){
         by = sel[i].getAttribute("by");
         to = sel[i].getAttribute("card");
         // TODO: ensure card names do not contain spaces or illegal chars wrt css selectors
-        isTurn = USER===GAMEINFO.turn ? '*' : '';
+        isTurn = VIEWMODEL.me()===VIEWMODEL.turn() ? '*' : '';
         $('#tableImgDiv'+to+' div').append("<p>BY: <u>"+by+isTurn+"</u></p>");
-    }    
+        
+        for(k = 0; k < VIEWMODEL.tablecards().length; k++){
+            if(VIEWMODEL.tablecards()[k].cardName===to){
+                if(by===VIEWMODEL.turn())
+                    by = by + " (turn)";
+                VIEWMODEL.tablecards()[k].by(by);
+            }
+        }
+    }
 }
 
 function setVotes(votesElem){
@@ -296,62 +349,78 @@ function setVotes(votesElem){
     for(i = 0; i<votes.length; i++){
         by = votes[i].getAttribute("by");
         to = votes[i].getAttribute("toCard");
-        // TODO: ensure card names do not contain spaces or illegal chars wrt css selectors
-        $('#tableImgDiv'+to+' div').append("<p>VOTE: "+by+"</p>");
+        for(k = 0; k < VIEWMODEL.tablecards().length; k++){
+            if(VIEWMODEL.tablecards()[k].cardName===to){
+                VIEWMODEL.tablecards()[k].votes.push(by);
+            }
+        }        
     }
 }
 
 function setTableCards(cards){
+    VIEWMODEL.tablecards.removeAll();
     console.log("Setting cards on table");
     var ccs = cards.getElementsByTagName("Card");
-    table = $("#tablecards");
-    table.html("");
     for(i = 0; i<ccs.length; i++){
-        GAMEINFO.table_cards[i] = ccs[i].getAttribute("cardId");
         cardUrl = ccs[i].getAttribute("cardUrl");
         cardName = ccs[i].getAttribute("cardId");
         cardTitle = ccs[i].getAttribute("cardTitle");
-        width = $("#playercards img").width();
-        console.log("Width of cards on table " + width);
-        height = width*3/2;
-        img = $('<img src="' + cardUrl + '" name="' + cardName + 
-                '" title="'+cardTitle+'" width="'+width+'" height="'+height+
-                '" id="tableImg'+cardName+'"/>');
-        imgcont = $('<div id="tableImgDiv'+cardName+'" class="dixitImgDiv">').wrapInner(img);
-        if(USER!==GAMEINFO.turn){
-            img.on('click', function(){
-                $('#tablecards img').off('click');
-                $(this).css('border', '5px solid #000');
-                performAction('voteCard', {user: USER, match: GAME, card: $(this).attr('name')});
-            });
-        }
-        imgcont.append('<div>');
-        table.append(imgcont);
+
+        VIEWMODEL.tablecards.push({
+               cardUrl: cardUrl,
+               cardName: cardName,
+               cardTitle: cardTitle,
+               votable: ko.computed(function(){
+                   return   VIEWMODEL.canVoteCard() &&
+                            VIEWMODEL.selectedCard() !== cardName && 
+                            VIEWMODEL.me() !== VIEWMODEL.turn() && 
+                            VIEWMODEL.phase()==="vote";
+               },this),
+               vote: function(card){
+                   if(card.votable){
+                        performAction('voteCard', {
+                            user: VIEWMODEL.me(), 
+                            match: VIEWMODEL.match(), 
+                            card: card.cardName
+                        });
+                        card.vote = function(){};
+                        // $(this).css('border', '5px solid #000');
+                    }
+               },
+               by: ko.observable(),
+               votes: ko.observableArray([])
+        });        
     }    
 }
 
 function setMyCards(cards){
-    console.log("Setting cards [user=" + USER + "; GAME="+GAME+"]");
     var ccs = cards.getElementsByTagName("Card");
-    myhand = $("#playercards");
-    myhand.html("");
+    VIEWMODEL.mycards.removeAll();
     for(i = 0; i<ccs.length; i++){
-        GAMEINFO.your_cards[i] = ccs[i].getAttribute("cardId");
         cardUrl = ccs[i].getAttribute("cardUrl");
         cardName = ccs[i].getAttribute("cardId");
         cardTitle = ccs[i].getAttribute("cardTitle");
-        width = $("#playercards").width() / 5;
-        height = width*3/2;
-        img = $('<img src="' + cardUrl + '" name="' + cardName + 
-                '" title="'+cardTitle+'" width="'+width+'" height="'+height+'" />');
-        if(GAMEINFO.phase==="selectCard"){
-            img.on('click', function(){ 
-                $('#playercards img').off('click');
-                $(this).css('border', '5px solid #000');
-                performAction('selectCard', {user: USER, match: GAME, card: $(this).attr('name')});
-            });
-        }
-        myhand.append(img);
+        VIEWMODEL.mycards.push({
+               cardUrl: cardUrl,
+               cardName: cardName,
+               cardTitle: cardTitle,
+               selectable: ko.computed(function(){
+                   return VIEWMODEL.canSelectCard() && 
+                           VIEWMODEL.phase()==="selectCard" && 
+                           !VIEWMODEL.selectedCard();
+               },this),
+               selected: ko.observable(false),
+               select: function(card){
+                   performAction('selectCard', {
+                       user: VIEWMODEL.me(), 
+                       match: VIEWMODEL.match(), 
+                       card: card.cardName
+                   });
+                   card.selected(true);
+                   card.select = function(){};  
+                   // $(this).css('border', '5px solid #000');
+               }
+        });         
     }
 }
 

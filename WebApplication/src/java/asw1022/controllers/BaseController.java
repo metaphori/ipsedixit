@@ -9,6 +9,7 @@ package asw1022.controllers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,9 +20,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class BaseController extends HttpServlet {
     
-    protected class Attrs {
+    public class Attrs {
         public static final String PageTitle = "PageTitle";       
-    }
+    }    
+    
+    protected Logger logger = Logger.getLogger(this.getClass().getName());
     
     public class DispatchInfo {
         public final List<String> urls;

@@ -2,6 +2,7 @@ package asw1022.model.dixit;
 
 import asw1022.util.Utils;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.Random;
  */
 public class GameExecution {
     
+    protected final String name;
+    protected String title;
     protected List<Card> allcards;
     protected LinkedList<Card> deck;
     protected List<Player> players;
@@ -21,7 +24,7 @@ public class GameExecution {
     protected Map<Player, Integer> pointsPerPlayer;
     protected Map<Player, Card> selectedCardForPlayer;
     protected Map<Player, Player> votes;
-    protected Match match;
+    protected final MatchConfiguration matchConfig;
     protected GamePhase phase;
     protected Player turn;
     protected int numCardsPerPlayer;
@@ -29,19 +32,47 @@ public class GameExecution {
     protected int pointLimit = 3;
     protected Player winner = null;
     
-    public GameExecution(Match match, List<Card> allcards){
-        this.match = match;
+    public GameExecution(MatchConfiguration match, 
+            List<Card> allcards, 
+            Player first) throws GameException{
+        this.name = GenerateUniqueName();
+        this.matchConfig = match;
         this.allcards = allcards;
         this.deck = new LinkedList<Card>(Utils.Shuffle(allcards));
         this.players = new ArrayList<Player>();
         this.phase = GamePhase.Setup;
-        this.numCardsPerPlayer = 4;
+        this.numCardsPerPlayer = match.getNumCardsForPlayers();
+        this.pointLimit = match.getNumPoints();
         this.cardsPerPlayer = new HashMap<Player, List<Card>>();
         this.pointsPerPlayer = new HashMap<Player, Integer>();
         this.selectedCardForPlayer = new HashMap<Player, Card>();
         this.votes = new HashMap<Player, Player>();
         this.phrase = null;
+        this.title = "Untitled-"+this.name;
+        this.addPlayer(first);
     } 
+    
+    protected String GenerateUniqueName(){
+        Calendar cal = Calendar.getInstance();
+        Long timems = cal.getTimeInMillis();
+        return "m"+timems.hashCode();
+    }
+    
+    public String getName(){
+        return this.name;
+    }
+    
+    public String getTitle(){
+        return this.title;
+    }
+    
+    public void setTitle(String title){
+        this.title = title;
+    }
+    
+    public MatchConfiguration getMatchConfiguration(){
+        return this.matchConfig;
+    }
     
     /************************************/
     /* PHASE: Setup */
@@ -295,7 +326,7 @@ public class GameExecution {
     }
     
     public synchronized int getMatchPlayerNum(){
-        return match.getNumPlayers();
+        return matchConfig.getNumPlayers();
     }
     
     public synchronized List<Player> getPlayers(){
@@ -311,11 +342,8 @@ public class GameExecution {
         return null;
     }
     
-    public synchronized List<Card> getSelectedCardsRandomly() throws GameException{
+    public synchronized List<Card> getSelectedCardsRandomly(){
         List<Card> result = new ArrayList<Card>();
-        if(this.phase!=GamePhase.Vote)
-            throw new GameException("It's not the right time to get all the cards on the table");
-        
         List<Player> ps = new ArrayList<Player>(this.players);
         Random rand = new Random();
         while(ps.size()>0){
@@ -334,8 +362,6 @@ public class GameExecution {
     
     public synchronized Map<Player,Card> getVotes() throws GameException {
         Map<Player,Card> result = new HashMap<Player,Card> ();
-        if(this.phase!=GamePhase.Results && this.phase!=GamePhase.End)
-            throw new GameException("It's not the right time to get all votes");
                 
         for(Player voter : votes.keySet()){
             Player voted = votes.get(voter);
@@ -351,7 +377,7 @@ public class GameExecution {
     /************************************/
     
     public synchronized boolean waitingForPlayers(){
-        return players.size() < match.getNumPlayers();
+        return players.size() < matchConfig.getNumPlayers();
     }    
     
 }

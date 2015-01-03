@@ -1,6 +1,6 @@
 package asw1022.db;
 
-import asw1022.model.dixit.Match;
+import asw1022.model.dixit.MatchConfiguration;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -13,12 +13,12 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="matches")
 @XmlAccessorType (XmlAccessType.FIELD)
-public class MatchDB implements IDB<Match> {
+public class MatchConfigurationDB implements IDB<MatchConfiguration> {
     
-    @XmlElement(name="match")
-    protected List<Match> matches;
+    @XmlElement(name="matchConfigs")
+    protected List<MatchConfiguration> matchConfigs;
     
-    public List<Match> getItems(){ return matches; }
-    public void setItems(List<Match> matches){ this.matches = matches; }
+    public List<MatchConfiguration> getItems(){ return matchConfigs; }
+    public void setItems(List<MatchConfiguration> matches){ this.matchConfigs = matches; }
 }
 

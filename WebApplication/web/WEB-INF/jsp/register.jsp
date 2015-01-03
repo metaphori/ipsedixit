@@ -1,6 +1,6 @@
 <%-- 
-    Document   : login
-    Created on : 02-Jan-2015, 12:01:39
+    Document   : newjspnew_game
+    Created on : 02-Jan-2015, 12:01:03
     Author     : Roberto Casadei <roberto.casadei12@studio.unibo.it>
 --%>
 
@@ -16,14 +16,14 @@
     <body>
 
         <%@ include file="/WEB-INF/jspf/prologue.jspf" %>
-
-        <h1>Login</h1>
         
+        <h1>User Registration</h1>
+
         <%@ include file="/WEB-INF/jspf/msg.jspf" %>
         
-        <% if(session.getAttribute("username")==null){ %>
-
-        <form method="post">
+        <% if(request.getAttribute("done")==null) { %>
+        
+        <form method="post" action="${pageContext.request.contextPath}/Register">
 
             <div class="formrow">
                 <label for="username">Username</label>
@@ -36,15 +36,13 @@
             </div>
 
             <div class="formrow">
-                <input type="submit" value="Login!" />
+                <input type="submit" value="Register!" />
             </div>
 
         </form>
-        <% } else { %>
-        <p>You've already signed in, <%= session.getAttribute("username") %></p>
+
         <% } %>
-
-
+        
         <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>
 
     </body>

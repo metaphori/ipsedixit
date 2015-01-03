@@ -12,12 +12,8 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class HomeController extends HttpServlet {
+public class HomeController extends BaseController {
     
-    protected class Attrs {
-        public static final String PageTitle = "PageTitle";       
-    }
-
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -39,7 +35,13 @@ public class HomeController extends HttpServlet {
         } else if (userPath.equals("/About")) {
             jspPage = "about";
             pageTitle = "About";
-        } else{
+        } else if (userPath.equals("/Error")) {
+            jspPage = "error";
+            pageTitle = "Error";
+            request.setAttribute("errorTitle", "Error");
+            request.setAttribute("errorMsg", "Bad request.");
+        }
+        else{
             jspPage = "error";
             pageTitle = "404 Error";
             request.setAttribute("errorTitle", "404 Error");
@@ -49,12 +51,13 @@ public class HomeController extends HttpServlet {
         request.setAttribute(Attrs.PageTitle, pageTitle);
         
         // use RequestDispatcher to forward request internally
-        String url = "/jsp/" + jspPage + ".jsp";
+        String url = "/WEB-INF/jsp/" + jspPage + ".jsp";
 
         try {
+            logger.info("Dispatching to url " + url);
             request.getRequestDispatcher(url).forward(request, response);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.severe("Eccezione: " + ex.getMessage());
         }
     }
 

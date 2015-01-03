@@ -1,25 +1,25 @@
 package asw1022.services;
 
+import asw1022.controllers.BaseController;
+import asw1022.controllers.BaseController.Attrs;
 import asw1022.model.User;
 import asw1022.model.dixit.Card;
 import asw1022.model.dixit.GameAction;
-import asw1022.model.dixit.GameException;
 import asw1022.model.dixit.GameExecution;
 import asw1022.model.dixit.GamePhase;
-import asw1022.model.dixit.Match;
+import asw1022.model.dixit.MatchConfiguration;
 import asw1022.model.dixit.Player;
 import asw1022.repositories.CardRepository;
 import asw1022.repositories.IRepository;
 import asw1022.repositories.MatchRepository;
 import asw1022.repositories.UserRepository;
+import asw1022.util.Utils;
 import asw1022.util.xml.ManageXML;
-import com.sun.org.apache.xerces.internal.impl.xs.opti.ElementImpl;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.AsyncContext;
-import javax.servlet.AsyncEvent;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -27,11 +27,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.sound.sampled.AudioFormat;
-import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.w3c.dom.*;
 
 /**
@@ -40,11 +35,9 @@ import org.w3c.dom.*;
  */
 @WebServlet(urlPatterns = {"/chat"}, asyncSupported = true)
 public class Dixit extends HttpServlet {
-
-    private HashMap<String, GameExecution> matches = new HashMap<String, GameExecution>(); 
     private HashMap<String, UserAsyncContext> contexts = new HashMap<String, UserAsyncContext>();
     
-    private IRepository<Match> mrepo;
+    private IRepository<MatchConfiguration> mrepo;
     private IRepository<User> urepo;
     private IRepository<Card> crepo;
     
@@ -108,20 +101,20 @@ public class Dixit extends HttpServlet {
         Document answer = null;
         OutputStream os;
         switch (operation) {
-            case JoinGame:
-                answer = JoinGame(root, request);
+            case JoinMatch:
+                answer = JoinGame(root, request, response);
                 break;
             case GivePhrase:
-                answer = SetPhrase(root, request);
+                answer = SetPhrase(root, request, response);
                 break;
             case SelectCard:
-                answer = SelectCard(root, request);
+                answer = SelectCard(root, request, response);
                 break;
             case VoteCard:
-                answer = VoteCard(root, request);
+                answer = VoteCard(root, request, response);
                 break;
             case Ok:
-                answer = Proceed(root, request);
+                answer = Proceed(root, request, response);
                 break;
             case None:
                 answer = GetUpdate(root, request, response);
@@ -139,8 +132,10 @@ public class Dixit extends HttpServlet {
     /*******************************************/
     /* Operation: JoinGame */
     /*******************************************/
-    public Document JoinGame(Element root, HttpServletRequest request) throws Exception{
+    public Document JoinGame(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception{
         HttpSession session = request.getSession();
+        
+        HashMap<String,GameExecution> matches = (HashMap<String,GameExecution>)request.getServletContext().getAttribute("Matches");
         
         // 0) Get data from XML message
         NodeList children = root.getChildNodes();
@@ -159,12 +154,7 @@ public class Dixit extends HttpServlet {
             // 1) The first player that joins also creates the match
             GameExecution ge = matches.get(matchname);
             if(ge==null){
-                // A match context has to be created
-                Match match = mrepo.getByName(matchname);
-                GameExecution newge = new GameExecution(match, this.cards);
-                matches.put(matchname, newge);
-                ge = newge;
-                logger.info("Created a new game execution for match " + matchname);
+                throw new ServletException("Bad request. This match does not exist.");
             }
             
             // 2) Create a new context for the user
@@ -234,7 +224,8 @@ public class Dixit extends HttpServlet {
     /*******************************************/
     /* Operation: JoinGame */
     /*******************************************/
-    public Document SetPhrase(Element root, HttpServletRequest request) throws Exception{
+    public Document SetPhrase(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        HashMap<String,GameExecution> matches = (HashMap<String,GameExecution>)request.getServletContext().getAttribute("Matches");        
         HttpSession session = request.getSession();
         
         // 0) Get data from XML message
@@ -293,7 +284,8 @@ public class Dixit extends HttpServlet {
     /*******************************************/
     /* Operation: SelectCard */
     /*******************************************/
-    public Document SelectCard(Element root, HttpServletRequest request) throws Exception{
+    public Document SelectCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        HashMap<String,GameExecution> matches = (HashMap<String,GameExecution>)request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
         
         // 0) Get data from XML message
@@ -350,7 +342,8 @@ logger.info(">>>>>>>>>>>>>>>>> SELECTCARD is done. New phase: " + ge.getPhase())
     /*******************************************/
     /* Operation: VoteCard */
     /*******************************************/
-    public Document VoteCard(Element root, HttpServletRequest request) throws Exception{
+    public Document VoteCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        HashMap<String,GameExecution> matches = (HashMap<String,GameExecution>)request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
         
         // 0) Get data from XML message
@@ -408,7 +401,8 @@ logger.info(">>>>>>>>>>>>>>>>> VOTE is done. New phase: " + ge.getPhase());
     /*******************************************/
     /* Operation: Proceed */
     /*******************************************/
-    public Document Proceed(Element root, HttpServletRequest request) throws Exception{
+    public Document Proceed(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception{
+        HashMap<String,GameExecution> matches = (HashMap<String,GameExecution>)request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
         
         // 0) Get data from XML message
@@ -517,6 +511,7 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
             cards.appendChild(card);
         }    
         
+        // Add info about the ongoing match: phase, the turn's player, the players, and their points
         Element gameInfo = doc.createElement("GameInfo");
         gameInfo.setAttribute("phase", ge.getPhase().toString());
         gameInfo.setAttribute("turn", ge.getTurn().getName());
@@ -530,6 +525,7 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
         gameInfo.appendChild(playersElem);
         gameInfo.appendChild(cards); 
         
+        // Add the clue, if available
         String phrase = ge.getPhrase();
         if(phrase!=null){
             Element phraseElem = doc.createElement("Phrase");
@@ -537,11 +533,33 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
             gameInfo.appendChild(phraseElem);
         }
         
-        if(ge.getPhase()==GamePhase.Vote){
-            List<Card> selcards = ge.getSelectedCardsRandomly();
+        // Add the card selected by this very user
+        Player thisplayer = ge.getPlayerByName(currUser);
+        Map<Player,Card> selcards = ge.getCardSelection();
+        
+        Card cselected = selcards.get(thisplayer);
+        if (cselected != null) {
+            Element selcardElem = doc.createElement("SelectedCard");
+            selcardElem.setTextContent(cselected.getName());
+            gameInfo.appendChild(selcardElem);
+        }
+        
+        // Add the card voted by this very player
+        Card cvoted = ge.getVotes().get(thisplayer);
+        if(cvoted != null){
+            Element votedElem = doc.createElement("VotedCard");
+            votedElem.setTextContent(cvoted.getName());
+            gameInfo.appendChild(votedElem);            
+        }
+        
+        // Add the "table cards", i.e., all the cards that have been selected
+        List<Player> pskeys = Utils.Shuffle(selcards.keySet());
+        if(ge.getPhase()==GamePhase.Vote || ge.getPhase()==GamePhase.Results
+                || ge.getPhase()==GamePhase.End){
             if(selcards!=null && selcards.size()>0){
                 Element selcardsElem = doc.createElement("CardsOnTable");
-                for(Card c : selcards){
+                for(Player p : pskeys){
+                    Card c = selcards.get(p);
                     Element card = doc.createElement("Card");
                     card.setAttribute("cardId", c.getName());
                     card.setAttribute("cardTitle", c.getTitle());
@@ -552,6 +570,7 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
             }
         }
         
+        // Add the results of this round: cards and votes are uncovered
         if(ge.getPhase()==GamePhase.Results 
                 || ge.getPhase()==GamePhase.End){
             Element votesElem = doc.createElement("Votes");
@@ -579,6 +598,7 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
             gameInfo.appendChild(votesElem);
         }
         
+        // If the match has been finished, let's communicate the winner
         if(ge.getPhase()==GamePhase.End){
             gameInfo.setAttribute("winner", ge.getWinner().getName());
         }
@@ -587,7 +607,7 @@ logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
     }    
     
     public GameAction getOperationFromString(String str){
-        if(str.equals("join")) return GameAction.JoinGame;
+        if(str.equals("join")) return GameAction.JoinMatch;
         else if(str.equals("setPhrase")) return GameAction.GivePhrase;
         else if(str.equals("selectCard")) return GameAction.SelectCard;
         else if(str.equals("voteCard")) return GameAction.VoteCard;

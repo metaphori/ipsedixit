@@ -8,5 +8,8 @@
         <div class="clearer"></div>
         
         <div id="footer">
-                       
+            <p>
+                <img width="70" src="${pageContext.request.contextPath}/multimedia/icon_html5.png" />
+                <img width="70" src="${pageContext.request.contextPath}/multimedia/icon_css3.png" />
+            </p>
         </div>

@@ -11,24 +11,27 @@ import javax.xml.bind.annotation.XmlAccessorType;
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Match extends BasicObject {
-    
-    protected String owner;
+public class MatchConfiguration extends BasicObject {
     protected int numPlayers;
+    protected int numPoints;
+    protected int numCardsForPlayers;
     
     protected MatchVisibility visibility;
     
     public enum MatchVisibility {
         All, SecretUrl
-    }    
-    
-    public String getOwner() { return this.owner; }
-    public void setOwner(String owner) { this.owner = owner; }    
+    }
     
     public void setVisiblity(MatchVisibility visibility){ this.visibility = visibility; }
     public MatchVisibility getVisibility(){ return this.visibility; }
 
     public int getNumPlayers() { return this.numPlayers; }
     public void setNumPlayers(int numPlayers) { this.numPlayers = numPlayers; }    
+
+    public int getNumPoints() { return this.numPoints; }
+    public void setNumPoints(int numPoints) { this.numPoints = numPoints; }     
+    
+    public int getNumCardsForPlayers(){ return this.numCardsForPlayers; }
+    public void setNumCardsForPlayers(int numCardsForPlayers){ this.numCardsForPlayers = numCardsForPlayers; }
     
 }

@@ -19,12 +19,8 @@ import javax.servlet.http.HttpSession;
  *
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class UserController extends HttpServlet {
+public class UserController extends BaseController {
 
-    protected class Attrs {
-        public static final String PageTitle = "PageTitle";       
-    }    
-    
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -60,12 +56,12 @@ public class UserController extends HttpServlet {
         request.setAttribute(Attrs.PageTitle, pageTitle);
 
         // use RequestDispatcher to forward request internally
-        String url = "/jsp/" + jspPage + ".jsp";
+        String url = "/WEB-INF/jsp/" + jspPage + ".jsp";
 
         try {
             request.getRequestDispatcher(url).forward(request, response);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.severe("Eccezione: " + ex.getMessage());
         }
     }
 
@@ -104,12 +100,12 @@ public class UserController extends HttpServlet {
         request.setAttribute(Attrs.PageTitle, pageTitle);
 
         // use RequestDispatcher to forward request internally
-        String url = "/jsp/" + jspPage + ".jsp";
+        String url = "/WEB-INF/jsp/" + jspPage + ".jsp";
 
         try {
             request.getRequestDispatcher(url).forward(request, response);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.severe("Eccezione: " + ex.getMessage());
         }
     }
     

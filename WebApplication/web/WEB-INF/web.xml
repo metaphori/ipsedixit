@@ -12,6 +12,16 @@
         <param-name>cardDB</param-name>
         <param-value>WEB-INF/xml/cardDB.xml</param-value>
     </context-param>
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>asw1022.controllers.AuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/Dixit</url-pattern>
+        <url-pattern>/NewMatch</url-pattern>
+        <url-pattern>/Play</url-pattern>       
+    </filter-mapping>
     <servlet>
         <servlet-name>Dixit</servlet-name>
         <servlet-class>asw1022.services.Dixit</servlet-class>
@@ -46,8 +56,11 @@
     <servlet-mapping>
         <servlet-name>GameController</servlet-name>
         <url-pattern>/NewMatch</url-pattern>
-        <url-pattern>/Play/*</url-pattern>
+        <url-pattern>/Play</url-pattern>
     </servlet-mapping>
+    <error-page>
+        <location>/Error</location>
+    </error-page>
     <session-config>
         <session-timeout>
             30

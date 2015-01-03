@@ -6,10 +6,10 @@
 
 package asw1022.repositories;
 
-import asw1022.db.MatchDB;
+import asw1022.db.MatchConfigurationDB;
 import asw1022.db.UserDB;
 import asw1022.model.User;
-import asw1022.model.dixit.Match;
+import asw1022.model.dixit.MatchConfiguration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +24,10 @@ import javax.xml.bind.Unmarshaller;
  *
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class MatchRepository extends Repository<Match> {
+public class MatchRepository extends Repository<MatchConfiguration> {
 
     public MatchRepository(String xmlDB) throws JAXBException{
-        super(xmlDB, MatchDB.class, Match.class);
+        super(xmlDB, MatchConfigurationDB.class, MatchConfiguration.class);
     }
     
 

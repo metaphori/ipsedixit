@@ -4,7 +4,7 @@
     Author     : Roberto Casadei <roberto.casadei12@studio.unibo.it>
 --%>
 
-<%@page import="asw1022.model.dixit.Match"%>
+<%@page import="asw1022.model.dixit.GameExecution"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
@@ -24,13 +24,13 @@
         <%@ include file="/WEB-INF/jspf/msg.jspf" %>        
 
         <% 
-            List<Match> matches = (List<Match>)request.getAttribute("matches"); 
+            List<GameExecution> matches = (List<GameExecution>)request.getAttribute("matches"); 
             if(matches!=null && matches.size()>0){
         %>
         
         <ul>
-        <% for(Match m : matches){ %>
-            <li><a href="${pageContext.request.contextPath}/jsp/play.jsp?match=<%= m.getName() %>"><%= m.getName().toString() %></a></li>
+        <% for(GameExecution m : matches){ %>
+            <li><a href="${pageContext.request.contextPath}/Play?match=<%= m.getName() %>"><%= m.getTitle() %></a></li>
         <% } %>
         </ul>
         

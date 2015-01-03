@@ -1,7 +1,7 @@
 package asw1022.db;
 
 import asw1022.model.User;
-import asw1022.model.dixit.Match;
+import asw1022.model.dixit.MatchConfiguration;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

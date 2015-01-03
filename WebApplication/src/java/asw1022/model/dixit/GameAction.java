@@ -6,7 +6,7 @@ package asw1022.model.dixit;
  */
 public enum GameAction {
     
-    JoinGame("join"),
+    JoinMatch("join"),
     GivePhrase("phrase"),
     SelectCard("select"),
     VoteCard("vote"),

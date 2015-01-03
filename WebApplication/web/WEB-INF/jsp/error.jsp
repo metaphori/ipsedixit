@@ -19,7 +19,7 @@
 
         <h1 class="error"><%= request.getAttribute("errorTitle") %></h1>
 
-        <p class="error"><%= request.getAttribute("errorMessage") %></p>
+        <p class="error"><%= request.getAttribute("errorMsg") %></p>
 
         <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>
 
