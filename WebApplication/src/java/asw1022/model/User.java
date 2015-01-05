@@ -1,5 +1,6 @@
 package asw1022.model;
 
+import asw1022.util.security.SecurityUtils;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
@@ -12,7 +13,12 @@ public class User extends BasicObject {
 
     protected String password;
       
-    public void setPassword(String password) { this.password = password; }
-    public String getPassword(){ return this.password; }
+    public void setPassword(String password) { 
+        this.password = password; 
+    }
+    
+    public String getPassword(){ 
+        return this.password; 
+    }
     
 }

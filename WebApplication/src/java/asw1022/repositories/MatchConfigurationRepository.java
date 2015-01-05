@@ -24,9 +24,9 @@ import javax.xml.bind.Unmarshaller;
  *
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class MatchRepository extends Repository<MatchConfiguration> {
+public class MatchConfigurationRepository extends Repository<MatchConfiguration> {
 
-    public MatchRepository(String xmlDB) throws JAXBException{
+    public MatchConfigurationRepository(String xmlDB) throws JAXBException{
         super(xmlDB, MatchConfigurationDB.class, MatchConfiguration.class);
     }
     

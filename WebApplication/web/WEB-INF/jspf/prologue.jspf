@@ -1,26 +1,28 @@
        <div id="top">            
             <div class="left">
-                <span>Progetto per il corso ASW 14-15</span> 
+                <span><i class="fa fa-tasks"></i> Progetto per il corso ASW 14-15</span> 
             </div>           
             <div class="right">
-                <span>Roberto Casadei</span>
+                <span>Roberto Casadei <i class="fa fa-graduation-cap"></i></span>
             </div>   
             <div class="center">
-                <span>Ipse Dixit</span>
+                <span><i class="fa fa-university"></i> Ipse Dixit <i class="fa fa-university"></i></span>
             </div>
            
            <div class="clearer"></div>
         </div>
         
         <div id="header">
+            
             <div id="hinner">
                 <span id="headerbar"> 
-                    <a href="/WebApplication/index.jsp"><i class="fa fa-sitemap"></i></a>
+                    <a href="${pageContext.request.contextPath}/Home"><i class="fa fa-sitemap"></i></a>
                     <span id="pagetitle">
                         <% if(request.getAttribute("PageTitle")!=null){ out.print(request.getAttribute("PageTitle")); } %>
                     </span>  
                 </span>
             </div>
+            
         </div>
 
         <div id="container">
@@ -29,7 +31,7 @@
             
             <div id="menu">
                 <ul>
-                    <li><a href="${pageContext.request.contextPath}/Home">Index</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Home">Home</a></li>
                     <li><a href="${pageContext.request.contextPath}/About">About</a></li>
                     <li class="menu_separator"></li>
                     <% if(session.getAttribute("username")==null){ %>
@@ -39,7 +41,7 @@
                     <li><a href="${pageContext.request.contextPath}/Logout">Logout</a></li>
                     <li><a href="${pageContext.request.contextPath}/NewMatch">New match</a></li>
                     <li><a href="${pageContext.request.contextPath}/Play">Join a match</a></li>
-                    <li><a href="${pageContext.request.contextPath}/Play?match=random">Random match</a></li>
+                    <li><a href="${pageContext.request.contextPath}/Play?random=random">Random match</a></li>
                     <% } %>
                     <!--
                     <li class="menu_separator"></li>

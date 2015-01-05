@@ -11,6 +11,8 @@
 <!DOCTYPE html>
 <html>
     <head>
+        
+        <title>Ipse Dixit: Select match</title>
 
         <%@ include file="/WEB-INF/jspf/head.jspf" %>
         
@@ -28,11 +30,33 @@
             if(matches!=null && matches.size()>0){
         %>
         
-        <ul>
+        <p>NOTE: the match status might be out of sync</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <td></td>
+                    <td>Name</td>
+                    <td># players</td>
+                    <td># joins</td> 
+                    <td>Phase</td>
+                </tr>
+            </thead>
+            <tbody>
         <% for(GameExecution m : matches){ %>
-            <li><a href="${pageContext.request.contextPath}/Play?match=<%= m.getName() %>"><%= m.getTitle() %></a></li>
+            <tr>
+                <td>
+                    <% if(m.getPlayers().size() < m.getMatchConfiguration().getNumPlayers()){ %>
+                    <a href="${pageContext.request.contextPath}/Play?match=<%= m.getName() %>">Play</a>
+                    <% } %>
+                </td>
+                <td><%= m.getTitle() %></td>
+                <td><%= m.getMatchConfiguration().getNumPlayers() %></td>
+                <td><%= m.getPlayers().size() %></td>
+                <td><%= m.getPhase().toString() %></td>
         <% } %>
-        </ul>
+            </tbody>
+        </table>
         
         <% } else { %>
         <p>There are no matches.</p>

@@ -1,8 +1,12 @@
-var USER, GAME, MSG;
+var MSG;
 
+
+/******************************/
+/** View Model (Knockout JS) **/
+/******************************/
 function ViewModel(){
     this.match = ko.observable(null);
-    this.phase = ko.observable(null);
+    this.phase = ko.observable('setup');
     this.turn = ko.observable(null);
     this.me = ko.observable(null);
     this.clue = ko.observable(null);
@@ -18,18 +22,11 @@ function ViewModel(){
     
     this.suggestion = ko.computed(function(){
         phase = this.phase();
-        if(!phase){
+        if(!phase || phase==="setup"){
             return this.joined() ? 
                 "Wait for the other players to join the game":
                 "Enter the game";
-        } else if(phase==="setPhrase"){
-            // cleanup at beginning of every round
-            this.tablecards.removeAll();
-            this.selectedCard(null);
-            this.votedCard(null);
-            this.joined(false);
-            this.proceeded(false);
-            
+        } else if(phase==="setPhrase"){            
             return this.turn()===this.me() ? 
                 "Tell a clue." : 
                 "Wait " + this.turn() + " to tell a clue.";
@@ -51,7 +48,9 @@ function ViewModel(){
                 "Round finished.";
         } else if(phase==="end"){
             return "END OF MATCH. Winner is " + VIEWMODEL.winner();
-        }      
+        } else{
+            return "Don't know";
+        }
     }, this);    
     
     this.canTellClue = ko.computed(function(){
@@ -86,7 +85,7 @@ function ViewModel(){
     };
     
     this.request = ko.computed(function(){
-        if(!this.phase() && !this.joined()){
+        if(this.phase()==="setup" && !this.joined()){
             return 'Enter the game';
         } else if(this.phase()==='results' && !this.proceeded()){
             return 'Next';
@@ -95,7 +94,7 @@ function ViewModel(){
     }, this);       
     
     this.next_action = ko.computed(function(){
-        if(!this.phase()){
+        if(this.phase()==="setup"){
             return this.join;
         } else if(this.phase()==="setPhrase" && this.me()===this.turn()){
             return this.setphrase;
@@ -109,17 +108,23 @@ function ViewModel(){
 
 VIEWMODEL = new ViewModel();
 
+/* On page load */
 $().ready(function(){
     
     ko.applyBindings(VIEWMODEL);
     
 });
 
+
+/************************************/
+/** Azioni utente e richieste AJAX **/
+/************************************/
+
 function performAction(action, actionData){
     onsuccess = function(res){};
     onsuccessEnd = function(res){};
     
-    if(action==="join"){
+    if(action==="join" && VIEWMODEL.phase()==="setup" && !VIEWMODEL.joined()){
         console.log("Joining the game...");
         data = createJoinXmlData(actionData.user, actionData.match);
         onsuccess = function(res){
@@ -133,26 +138,22 @@ function performAction(action, actionData){
         data = createGameUpdateXmlData(actionData.user, actionData.match);
         waitForUpdate(data);
         return;
-    } else if(action==="setPhrase"){ 
+    } else if(action==="setPhrase" && VIEWMODEL.phase()==="setPhrase" && VIEWMODEL.turn()==VIEWMODEL.me()){ 
         console.log("Setting phrase...");
         data = createPhraseXmlData(actionData.user, actionData.match, actionData.phrase);
-    } else if(action==="selectCard"){
+    } else if(action==="selectCard" && VIEWMODEL.phase()==="selectCard" && !VIEWMODEL.selectedCard()){
         console.log("Selecting card " + actionData.card + " by " +actionData.user + " in " +actionData.match);
         data = createSelectCardXmlData(actionData.user, actionData.match, actionData.card);
         onsuccess = function(res){
             VIEWMODEL.selectedCard(actionData.card);
         };
-    } else if(action==="voteCard"){
+    } else if(action==="voteCard" && VIEWMODEL.phase()==="vote" && !VIEWMODEL.votedCard()){
         console.log("Voting card " + actionData.card);
-        if(VIEWMODEL.me()===VIEWMODEL.turn()){
-            console.log("I cannot vote because it is my turn.");
-            return;
-        }
         onsuccess = function(res){
             VIEWMODEL.votedCard(actionData.card);
         };        
         data = createVoteCardXmlData(actionData.user, actionData.match, actionData.card);
-    } else if(action==="proceed"){
+    } else if(action==="proceed" && VIEWMODEL.phase()==="results"){
         console.log("Proceeding to next round");
         data = createBasicXmlData("ok", actionData.user, actionData.match);
         onsuccess = function(res){
@@ -160,7 +161,7 @@ function performAction(action, actionData){
         };        
     }
     else {
-        setError("Unknown action");
+        setError("Unknown action or action not available in current phase.");
         return;
     }
     
@@ -229,57 +230,18 @@ function onGameUpdate(res){
         return;
     }
     
-    performAction("pop", {user: USER, match: GAME});
-    
+    performAction("pop", {user: VIEWMODEL.me(), match: VIEWMODEL.match()});
 }
 
-function createBasicXmlData(rootName, user, match){
-    var data = document.implementation.createDocument("", "", null);
-    var root = data.createElement(rootName);
-    data.appendChild(root);
-    var userelem = data.createElement("user");
-    userelem.appendChild(data.createTextNode(user));
-    var matchelem = data.createElement("match");
-    matchelem.appendChild(data.createTextNode(match));
-    root.appendChild(userelem);
-    root.appendChild(matchelem);
-    return data;    
-}
 
-function createJoinXmlData(user, match){
-    return createBasicXmlData("join", user, match);
-}
-
-function createGameUpdateXmlData(user, match){
-    return createBasicXmlData("pop", user, match);
-}
-
-function createPhraseXmlData(user, match, phrase){
-    var data = createBasicXmlData("setPhrase", user, match);
-    var phraseElem = data.createElement("phrase");
-    phraseElem.appendChild(data.createTextNode(phrase));
-    data.documentElement.appendChild(phraseElem);
-    return data;
-}
-
-function createSelectCardXmlData(user, match, cardId){
-    var data = createBasicXmlData("selectCard", user, match);
-    var cardElem = data.createElement("card");
-    cardElem.appendChild(data.createTextNode(cardId));
-    data.documentElement.appendChild(cardElem);
-    return data;    
-}
-
-function createVoteCardXmlData(user, match, cardId){
-    var data = createBasicXmlData("voteCard", user, match);
-    var cardElem = data.createElement("card");
-    cardElem.appendChild(data.createTextNode(cardId));
-    data.documentElement.appendChild(cardElem);
-    return data;    
-}
+/*******************************/
+/** Aggiornamento stato gioco **/
+/*******************************/
 
 function syncWithGameInfo(gameinfo){
-    console.log("Sync with game info.");
+    if(!gameinfo){ console.log("CANNOT SYNC: GAMEINFO is NULL"); return; }
+    console.log("Synch with game info: parse XML DOM and set viewmodel.");
+    
     var phase = gameinfo.getAttribute("phase");
     var turn = gameinfo.getAttribute("turn");
     var winner = gameinfo.getAttribute("winner");
@@ -291,6 +253,15 @@ function syncWithGameInfo(gameinfo){
     var selection = gameinfo.getElementsByTagName("UncoveredCards")[0];
     var selcard = gameinfo.getElementsByTagName("SelectedCard")[0];
     var votedcard = gameinfo.getElementsByTagName("VotedCard")[0];
+    
+    if(phase==="setPhrase"){
+        // cleanup at beginning of every round
+        VIEWMODEL.tablecards.removeAll();
+        VIEWMODEL.selectedCard(null);
+        VIEWMODEL.votedCard(null);
+        VIEWMODEL.joined(false);
+        VIEWMODEL.proceeded(false);        
+    }
     
     VIEWMODEL.winner(winner);
     VIEWMODEL.phase(phase);
@@ -332,8 +303,6 @@ function uncoverCards(selectionElem){
         to = sel[i].getAttribute("card");
         // TODO: ensure card names do not contain spaces or illegal chars wrt css selectors
         isTurn = VIEWMODEL.me()===VIEWMODEL.turn() ? '*' : '';
-        $('#tableImgDiv'+to+' div').append("<p>BY: <u>"+by+isTurn+"</u></p>");
-        
         for(k = 0; k < VIEWMODEL.tablecards().length; k++){
             if(VIEWMODEL.tablecards()[k].cardName===to){
                 if(by===VIEWMODEL.turn())
@@ -387,6 +356,18 @@ function setTableCards(cards){
                         // $(this).css('border', '5px solid #000');
                     }
                },
+               showDetails: function(card){
+                   if(VIEWMODEL.phase()==="results"){
+                        content = $('<p>Chosen by: <em>' + this.by() + "</em></p>");
+                        for(i=0; i<this.votes().length; i++){
+                            content.append(' <i class="fa fa-check-square"></i> <span>'+this.votes()[i]+'</span> ')
+                        }
+                        $('#cardDetails').html(content);
+                   }
+               },
+               hideDetails: function(){
+                   $('#cardDetails').html('<p>&nbsp;</p>');
+               },
                by: ko.observable(),
                votes: ko.observableArray([])
         });        
@@ -423,6 +404,60 @@ function setMyCards(cards){
         });         
     }
 }
+
+
+/******************************/
+/** Costruzione messaggi XML **/
+/******************************/
+
+function createBasicXmlData(rootName, user, match){
+    var data = document.implementation.createDocument("", "", null);
+    var root = data.createElement(rootName);
+    data.appendChild(root);
+    var userelem = data.createElement("user");
+    userelem.appendChild(data.createTextNode(user));
+    var matchelem = data.createElement("match");
+    matchelem.appendChild(data.createTextNode(match));
+    root.appendChild(userelem);
+    root.appendChild(matchelem);
+    return data;    
+}
+
+function createJoinXmlData(user, match){
+    return createBasicXmlData("join", user, match);
+}
+
+function createGameUpdateXmlData(user, match){
+    return createBasicXmlData("pop", user, match);
+}
+
+function createPhraseXmlData(user, match, phrase){
+    var data = createBasicXmlData("setPhrase", user, match);
+    var phraseElem = data.createElement("phrase");
+    phraseElem.appendChild(data.createTextNode(phrase));
+    data.documentElement.appendChild(phraseElem);
+    return data;
+}
+
+function createSelectCardXmlData(user, match, cardId){
+    var data = createBasicXmlData("selectCard", user, match);
+    var cardElem = data.createElement("card");
+    cardElem.appendChild(data.createTextNode(cardId));
+    data.documentElement.appendChild(cardElem);
+    return data;    
+}
+
+function createVoteCardXmlData(user, match, cardId){
+    var data = createBasicXmlData("voteCard", user, match);
+    var cardElem = data.createElement("card");
+    cardElem.appendChild(data.createTextNode(cardId));
+    data.documentElement.appendChild(cardElem);
+    return data;    
+}
+
+/*************************/
+/** Funzioni di utilità **/
+/*************************/
 
 function setError(msg){
     console.log("ERROR: " + msg);

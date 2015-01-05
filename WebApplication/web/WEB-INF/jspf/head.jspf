@@ -1,8 +1,6 @@
 <%@ page pageEncoding="UTF-8" %>
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Ipse Dixit<% if(request.getAttribute("PageTitle")!=null){ out.print(" - " + request.getAttribute("PageTitle")); } %></title>
-        
         <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/style-sheets/site.css" />
         <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" />      
         

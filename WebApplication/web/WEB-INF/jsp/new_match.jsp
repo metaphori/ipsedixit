@@ -9,6 +9,8 @@
 <!DOCTYPE html>
 <html>
     <head>
+        
+        <title>Ipse Dixit: New match</title>
 
         <%@ include file="/WEB-INF/jspf/head.jspf" %>
         

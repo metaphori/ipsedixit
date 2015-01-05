@@ -14,53 +14,18 @@
     </context-param>
     <filter>
         <filter-name>AuthFilter</filter-name>
-        <filter-class>asw1022.controllers.AuthFilter</filter-class>
+        <filter-class>asw1022.filters.AuthFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/Dixit</url-pattern>
         <url-pattern>/NewMatch</url-pattern>
-        <url-pattern>/Play</url-pattern>       
-    </filter-mapping>
-    <servlet>
-        <servlet-name>Dixit</servlet-name>
-        <servlet-class>asw1022.services.Dixit</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>HomeController</servlet-name>
-        <servlet-class>asw1022.controllers.HomeController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>UserController</servlet-name>
-        <servlet-class>asw1022.controllers.UserController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>GameController</servlet-name>
-        <servlet-class>asw1022.controllers.GameController</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>Dixit</servlet-name>
-        <url-pattern>/Dixit</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>HomeController</servlet-name>
-        <url-pattern>/Home</url-pattern>
-        <url-pattern>/About</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>UserController</servlet-name>
-        <url-pattern>/Register</url-pattern>
-        <url-pattern>/Login</url-pattern>
-        <url-pattern>/Logout</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>GameController</servlet-name>
-        <url-pattern>/NewMatch</url-pattern>
         <url-pattern>/Play</url-pattern>
-    </servlet-mapping>
-    <error-page>
-        <location>/Error</location>
-    </error-page>
+    </filter-mapping>
+    <listener>
+        <description>ServletContextListener</description>
+        <listener-class>asw1022.filters.DixitContextListener</listener-class>
+    </listener>
     <session-config>
         <session-timeout>
             30

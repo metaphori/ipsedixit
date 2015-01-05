@@ -10,6 +10,8 @@
 <html>
     <head>
 
+        <title>Ipse Dixit: Register</title>
+        
         <%@ include file="/WEB-INF/jspf/head.jspf" %>
         
     </head>

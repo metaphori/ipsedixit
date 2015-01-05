@@ -1,4 +1,4 @@
-package asw1022.controllers;
+package asw1022.filters;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -40,10 +40,8 @@ public class AuthFilter implements Filter {
         Object username = session.getAttribute("username");
         if(username==null){
             String jspPage = "error";
-            String pageTitle = "Error";
             request.setAttribute("errorTitle", "Unauthorized");
             request.setAttribute("errorMsg", "You must be logged in to perform this action.");
-            request.setAttribute(BaseController.Attrs.PageTitle, pageTitle);
             String url = "/WEB-INF/jsp/" + jspPage + ".jsp";
             request.getRequestDispatcher(url).forward(request, response);
         }

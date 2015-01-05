@@ -252,8 +252,10 @@ public class GameExecution {
     public synchronized void proceed(Player player) throws GameException {
         if(this.phase != GamePhase.Results)
             throw new GameException("Wrong phase. You are ok but phase is " + this.phase);
-        if(pIsOk.contains(player))
-            throw new GameException("You should not say you are ok twice.");
+        if(pIsOk.contains(player)){
+            //throw new GameException("You should not say you are ok twice.");
+            return;
+        }
         
         pIsOk.add(player);
         if(pIsOk.size()==this.players.size()){
