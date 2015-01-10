@@ -21,7 +21,7 @@
         
         <h1>User Registration</h1>
 
-        <%@ include file="/WEB-INF/jspf/msg.jspf" %>
+        <%@ include file="/WEB-INF/jspf/form_errors.jspf" %>
         
         <% if(request.getAttribute("done")==null) { %>
         
@@ -29,13 +29,18 @@
 
             <div class="formrow">
                 <label for="username">Username</label>
-                <input type="text" size="20" maxlength="20" name="username" />
+                <input type="text" size="20" maxlength="20" name="username" id="username"
+                       value="${pageContext.request.getParameter("username")}" />
             </div>    
 
             <div class="formrow">
                 <label for="password">Password</label>
-                <input type="password" size="20" maxlength="20" name="password" />
+                <input type="password" size="20" maxlength="20" name="password" id="password" />
             </div>
+            <div class="formrow">
+                <label for="password2">Repeat password</label>
+                <input type="password" size="20" maxlength="20" name="password2" id="password2" />
+            </div>            
 
             <div class="formrow">
                 <input type="submit" value="Register!" />

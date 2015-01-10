@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
 /**
- *
+ * A user of the website.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 @XmlAccessorType(XmlAccessType.FIELD)

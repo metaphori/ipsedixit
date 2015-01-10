@@ -1,16 +1,13 @@
 package asw1022.services;
 
-import asw1022.model.User;
 import asw1022.model.dixit.Card;
 import asw1022.model.dixit.GameAction;
+import asw1022.model.dixit.GameException;
 import asw1022.model.dixit.GameExecution;
 import asw1022.model.dixit.GamePhase;
-import asw1022.model.dixit.MatchConfiguration;
 import asw1022.model.dixit.Player;
 import asw1022.repositories.CardRepository;
 import asw1022.repositories.IRepository;
-import asw1022.repositories.MatchConfigurationRepository;
-import asw1022.repositories.UserRepository;
 import asw1022.util.Utils;
 import asw1022.util.xml.ManageXML;
 import java.io.*;
@@ -96,22 +93,22 @@ public class Dixit extends HttpServlet {
         OutputStream os;
         switch (operation) {
             case JoinMatch:
-                answer = JoinMatch(root, request, response);
+                answer = joinMatch(root, request, response);
                 break;
             case GivePhrase:
-                answer = SetPhrase(root, request, response);
+                answer = setPhrase(root, request, response);
                 break;
             case SelectCard:
-                answer = SelectCard(root, request, response);
+                answer = selectCard(root, request, response);
                 break;
             case VoteCard:
-                answer = VoteCard(root, request, response);
+                answer = voteCard(root, request, response);
                 break;
             case Ok:
-                answer = Proceed(root, request, response);
+                answer = proceed(root, request, response);
                 break;
             case None:
-                answer = GetUpdate(root, request, response);
+                answer = getUpdate(root, request, response);
                 break;
         }
 
@@ -130,7 +127,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public Document JoinMatch(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public Document joinMatch(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
         HttpSession session = request.getSession();
 
         HashMap<String, GameExecution> matches = (HashMap<String, GameExecution>) request.getServletContext().getAttribute("Matches");
@@ -145,16 +142,16 @@ public class Dixit extends HttpServlet {
 
         // Check if provided username matches with the one on the session
         if (!user.equals(session.getAttribute("username"))) {
-            throw new Exception("Provided user is different from session.");
+            return buildErrorMsg("Unexpected error while providing the clue.");
         }
 
+        // 1) Get the match
+        GameExecution ge = matches.get(matchname);
+        if (ge == null) {
+            return buildErrorMsg("Bad request. This match does not exist.");
+        }
+        
         synchronized (this) {
-            // 1) The first player that joins also creates the match
-            GameExecution ge = matches.get(matchname);
-            if (ge == null) {
-                throw new ServletException("Bad request. This match does not exist.");
-            }
-
             // 2) Create a new context for the user
             UserAsyncContext userCtx = new UserAsyncContext(user);
             contexts.put(user, userCtx);
@@ -167,7 +164,7 @@ public class Dixit extends HttpServlet {
                 Document answer = mngXML.newDocument("Ok");
                 if (!ge.waitingForPlayers()) {
                     logger.info("Passing current game status");
-                    this.AddGameInfoSubtree(answer, ge, user);
+                    this.addGameInfoSubtree(answer, ge, user, null);
                 }
                 return answer;
             }
@@ -181,33 +178,23 @@ public class Dixit extends HttpServlet {
                 // 4c) Add the player to the game
                 Player newplayer = new Player();
                 newplayer.setName(user);
-                ge.addPlayer(newplayer);
-
+                
+                try{
+                    ge.addPlayer(newplayer);
+                } catch (GameException gameException) {
+                    return buildErrorMsg(gameException.getMessage());
+                } catch (Exception exc) {
+                    return buildErrorMsg("Unexpected error while adding new user.");
+                }
+                
                 // 4d) Let's check if, after this addition, we are done
                 // If so, let's notify all the players and provide them the game status.
                 boolean waitingForPlayers = ge.waitingForPlayers();
                 Document answer = mngXML.newDocument("Ok");
                 if (!waitingForPlayers) {
-                    // Let's include the game status info to this very response...
-                    //this.AddGameInfoSubtree(answer, ge, user);
-                    logger.info(">>>>>>>>>>>>>>>>> SETUP is done. New phase: " + ge.getPhase());
-                    // .. and also to all the other players
-                    // (they will be notified asynchronously as soon as they wants update)
-                    for (String destUser : contexts.keySet()) {
-                        Document data = mngXML.newDocument("Update");
-                        this.AddGameInfoSubtree(data, ge, destUser);
-
-                        UserAsyncContext ctx = contexts.get(destUser);
-                        synchronized (ctx) {
-                            ctx._queue.add(data);
-                            AsyncContext asyncCtx = ctx._async.get();
-                            if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
-                                OutputStream os = asyncCtx.getResponse().getOutputStream();
-                                mngXML.transform(os, data);
-                                asyncCtx.complete();
-                            }
-                        }
-                    } // end for(contexts)
+                    logger.info(">>>>>>>>>>>>>>>>> SETUP is done. New phase: " + ge.getPhase()); 
+                    
+                    pushUpdate(ge, GamePhase.Setup);
                 }
 
                 return answer;
@@ -226,7 +213,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public Document SetPhrase(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public Document setPhrase(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
         HashMap<String, GameExecution> matches = (HashMap<String, GameExecution>) request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
 
@@ -241,7 +228,7 @@ public class Dixit extends HttpServlet {
 
         // Check if provided username matches with the one on the session
         if (!user.equals(session.getAttribute("username"))) {
-            throw new Exception("Provided user is different from session.");
+            return buildErrorMsg("Unexpected error while providing the clue.");
         }
 
         synchronized (this) {
@@ -252,31 +239,21 @@ public class Dixit extends HttpServlet {
             Player player = ge.getPlayerByName(user);
 
             // Set phrase
-            ge.setPhrase(player, phrasetxt);
-
+            try {
+                ge.setPhrase(player, phrasetxt);
+            } catch (GameException gameException) {
+                return buildErrorMsg(gameException.getMessage());
+            } catch(Exception exc){
+                return buildErrorMsg("Unexpected error while providing the clue.");
+            }
+                
             Document answer = mngXML.newDocument("Ok");
+            
+            if(ge.getPhase()==GamePhase.SelectCard){
+                logger.info(">>>>>>>>>>>>>>>>> SET_PHRASE is done. New phase: " + ge.getPhase());
 
-            // Let's include the game status info to this very response...
-            //this.AddGameInfoSubtree(answer, ge, user);
-            logger.info(">>>>>>>>>>>>>>>>> SET_PHRASE is done. New phase: " + ge.getPhase());
-            // .. and also to all the other players
-            // (they will be notified asynchronously as soon as they wants update)
-
-            for (String destUser : contexts.keySet()) {
-                Document data = mngXML.newDocument("Update");
-                this.AddGameInfoSubtree(data, ge, destUser);
-
-                UserAsyncContext ctx = contexts.get(destUser);
-                synchronized (ctx) {
-                    ctx._queue.add(data);
-                    AsyncContext asyncCtx = ctx._async.get();
-                    if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
-                        OutputStream os = asyncCtx.getResponse().getOutputStream();
-                        mngXML.transform(os, data);
-                        asyncCtx.complete();
-                    }
-                }
-            } // end for(contexts)
+                pushUpdate(ge, GamePhase.SetPhrase);
+            }
 
             return answer;
         } // end synchronized(this)
@@ -290,7 +267,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public Document SelectCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public Document selectCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
         HashMap<String, GameExecution> matches = (HashMap<String, GameExecution>) request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
 
@@ -305,40 +282,28 @@ public class Dixit extends HttpServlet {
 
         // Check if provided username matches with the one on the session
         if (!user.equals(session.getAttribute("username"))) {
-            throw new Exception("Provided user is different from session.");
+            return buildErrorMsg("Unexpected error while providing the clue.");
         }
 
         synchronized (this) {
             GameExecution ge = matches.get(matchname);
             Player player = ge.getPlayerByName(user);
 
-            ge.selectCard(player, cardName);
-
+            try{
+                ge.selectCard(player, cardName);
+            } catch (GameException gameException) {
+                return buildErrorMsg(gameException.getMessage());
+            } catch(Exception exc){
+                return buildErrorMsg("Unexpected error while selecting a card.");
+            }
+            
             Document answer = mngXML.newDocument("Ok");
 
             // When all the players have selected a card, the game switch phase to "vote"
             if (ge.getPhase() == GamePhase.Vote) {
-                // Let's include the game status info to this very response...
-                //this.AddGameInfoSubtree(answer, ge, user);
                 logger.info(">>>>>>>>>>>>>>>>> SELECTCARD is done. New phase: " + ge.getPhase());
-                // .. and also to all the other players
-                // (they will be notified asynchronously as soon as they wants update)
-
-                for (String destUser : contexts.keySet()) {
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser);
-
-                    UserAsyncContext ctx = contexts.get(destUser);
-                    synchronized (ctx) {
-                        ctx._queue.add(data);
-                        AsyncContext asyncCtx = ctx._async.get();
-                        if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
-                            OutputStream os = asyncCtx.getResponse().getOutputStream();
-                            mngXML.transform(os, data);
-                            asyncCtx.complete();
-                        }
-                    }
-                } // end for(contexts)
+                
+                pushUpdate(ge, GamePhase.SelectCard);
             } // end if(phase="vote")
             return answer;
         } // end synchronized(this)
@@ -352,7 +317,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public Document VoteCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public Document voteCard(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
         HashMap<String, GameExecution> matches = (HashMap<String, GameExecution>) request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
 
@@ -367,41 +332,29 @@ public class Dixit extends HttpServlet {
 
         // Check if provided username matches with the one on the session
         if (!user.equals(session.getAttribute("username"))) {
-            throw new Exception("Provided user is different from session.");
+            return buildErrorMsg("Unexpected error while providing the clue.");
         }
 
         synchronized (this) {
             GameExecution ge = matches.get(matchname);
             Player player = ge.getPlayerByName(user);
 
-            ge.vote(player, cardName);
-
+            try{
+                ge.vote(player, cardName);
+            } catch (GameException gameException) {
+                return buildErrorMsg(gameException.getMessage());
+            } catch(Exception exc){
+                return buildErrorMsg("Unexpected error while voting a card.");
+            }
+            
             Document answer = mngXML.newDocument("Ok");
 
             // When all the players have voted a card, the game switch phase to "results"
-            if (ge.getPhase() == GamePhase.Results
-                    || ge.getPhase() == GamePhase.End) {
-                // Let's include the game status info to this very response...
-                //this.AddGameInfoSubtree(answer, ge, user);
+            if (ge.getPhase() == GamePhase.Results || ge.getPhase() == GamePhase.End) {
                 logger.info(">>>>>>>>>>>>>>>>> VOTE is done. New phase: " + ge.getPhase());
-                // .. and also to all the other players
-                // (they will be notified asynchronously as soon as they wants update)
 
-                for (String destUser : contexts.keySet()) {
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser);
-
-                    UserAsyncContext ctx = contexts.get(destUser);
-                    synchronized (ctx) {
-                        ctx._queue.add(data);
-                        AsyncContext asyncCtx = ctx._async.get();
-                        if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
-                            OutputStream os = asyncCtx.getResponse().getOutputStream();
-                            mngXML.transform(os, data);
-                            asyncCtx.complete();
-                        }
-                    }
-                } // end for(contexts)
+                pushUpdate(ge, GamePhase.Vote);
+                
             } // end if(phase="vote")
             return answer;
         } // end synchronized(this)
@@ -415,7 +368,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public Document Proceed(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public Document proceed(Element root, HttpServletRequest request, HttpServletResponse response) throws Exception {
         HashMap<String, GameExecution> matches = (HashMap<String, GameExecution>) request.getServletContext().getAttribute("Matches");
         HttpSession session = request.getSession();
 
@@ -428,7 +381,7 @@ public class Dixit extends HttpServlet {
 
         // Check if provided username matches with the one on the session
         if (!user.equals(session.getAttribute("username"))) {
-            throw new Exception("Provided user is different from session.");
+            return buildErrorMsg("Unexpected error while providing the clue.");
         }
 
         synchronized (this) {
@@ -437,34 +390,22 @@ public class Dixit extends HttpServlet {
 
             logger.info(player.getName() + " is done and wants to proceed.");
 
-            ge.proceed(player);
-
+            try{
+                ge.proceed(player);
+            } catch (GameException gameException) {
+                return buildErrorMsg(gameException.getMessage());
+            } catch(Exception exc){
+                return buildErrorMsg("Unexpected error while proceeding.");
+            }            
+            
             Document answer = mngXML.newDocument("Ok");
 
             // When all the players have voted a card, the game switch phase to "results"
             if (ge.getPhase() == GamePhase.SetPhrase) {
-                // Let's include the game status info to this very response...
-                //this.AddGameInfoSubtree(answer, ge, user);
                 logger.info("READY TO GO TO NEXT TURN. New phase: " + ge.getPhase());
-                // .. and also to all the other players
-                // (they will be notified asynchronously as soon as they wants update)
-
-                for (String destUser : contexts.keySet()) {
-                    Document data = mngXML.newDocument("Update");
-                    this.AddGameInfoSubtree(data, ge, destUser);
-
-                    UserAsyncContext ctx = contexts.get(destUser);
-                    synchronized (ctx) {
-                        ctx._queue.add(data);
-                        AsyncContext asyncCtx = ctx._async.get();
-                        if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
-                            OutputStream os = asyncCtx.getResponse().getOutputStream();
-                            mngXML.transform(os, data);
-                            asyncCtx.complete();
-                        }
-                    }
-                } // end for(contexts)
-            } // end if(phase="vote")
+                
+                pushUpdate(ge, GamePhase.Results);
+            } // end if(phase="setphrase")
             return answer;
         } // end synchronized(this)
 
@@ -477,7 +418,7 @@ public class Dixit extends HttpServlet {
     /**
      * ****************************************
      */
-    public synchronized Document GetUpdate(Element root,
+    public synchronized Document getUpdate(Element root,
             HttpServletRequest request,
             HttpServletResponse response) throws Exception {
         String user = (String) request.getSession().getAttribute("username");
@@ -496,7 +437,7 @@ public class Dixit extends HttpServlet {
                 if (ctx._async.get() == null) {
                     logger.info("The list is empty and asyncCtx null for " + user + " => async");
                     AsyncContext asyncContext = request.startAsync();
-                    asyncContext.setTimeout(10 * 1000);
+                    asyncContext.setTimeout(20 * 1000);
                     asyncContext.addListener(ctx);
                     if (!ctx._async.compareAndSet(null, asyncContext)) {
                         logger.severe("Eeeh?!? " + user);
@@ -514,18 +455,11 @@ public class Dixit extends HttpServlet {
         return null;
     }
 
-    private synchronized void AddGameInfoSubtree(Document doc, GameExecution ge, String currUser) throws Exception {
+    private void addGameInfoSubtree(Document doc, 
+            GameExecution ge, 
+            String currUser,
+            GamePhase completedPhase) throws Exception {
         Element root = doc.getDocumentElement();
-
-        // Add cards to the response
-        Element cards = doc.createElement("YourCards");
-        for (Card c : ge.getCardsForPlayer(currUser)) {
-            Element card = doc.createElement("Card");
-            card.setAttribute("cardId", c.getName());
-            card.setAttribute("cardTitle", c.getTitle());
-            card.setAttribute("cardUrl", c.getUrl());
-            cards.appendChild(card);
-        }
 
         // Add info about the ongoing match: phase, the turn's player, the players, and their points
         Element gameInfo = doc.createElement("GameInfo");
@@ -538,15 +472,32 @@ public class Dixit extends HttpServlet {
             playerElem.appendChild(doc.createTextNode(p.getName()));
             playersElem.appendChild(playerElem);
         }
-        gameInfo.appendChild(playersElem);
-        gameInfo.appendChild(cards);
+        gameInfo.appendChild(playersElem);        
+        
+        // Add cards to the response
+        if(completedPhase==null 
+                || completedPhase==GamePhase.Setup 
+                || completedPhase==GamePhase.SelectCard){
+            Element cards = doc.createElement("YourCards");
+            for (Card c : ge.getCardsForPlayer(currUser)) {
+                Element card = doc.createElement("Card");
+                card.setAttribute("cardId", c.getName());
+                card.setAttribute("cardTitle", c.getTitle());
+                card.setAttribute("cardUrl", c.getUrl());
+                cards.appendChild(card);
+            }
+            gameInfo.appendChild(cards);
+        }
 
         // Add the clue, if available
-        String phrase = ge.getPhrase();
-        if (phrase != null) {
-            Element phraseElem = doc.createElement("Phrase");
-            phraseElem.appendChild(doc.createTextNode(phrase));
-            gameInfo.appendChild(phraseElem);
+        if(completedPhase==null 
+                || completedPhase==GamePhase.SetPhrase){
+            String phrase = ge.getPhrase();
+            if (phrase != null) {
+                Element phraseElem = doc.createElement("Phrase");
+                phraseElem.appendChild(doc.createTextNode(phrase));
+                gameInfo.appendChild(phraseElem);
+            }
         }
 
         // Add the card selected by this very user
@@ -569,49 +520,55 @@ public class Dixit extends HttpServlet {
         }
 
         // Add the "table cards", i.e., all the cards that have been selected
-        List<Player> pskeys = Utils.Shuffle(selcards.keySet());
-        if (ge.getPhase() == GamePhase.Vote || ge.getPhase() == GamePhase.Results
-                || ge.getPhase() == GamePhase.End) {
-            if (selcards != null && selcards.size() > 0) {
-                Element selcardsElem = doc.createElement("CardsOnTable");
-                for (Player p : pskeys) {
-                    Card c = selcards.get(p);
-                    Element card = doc.createElement("Card");
-                    card.setAttribute("cardId", c.getName());
-                    card.setAttribute("cardTitle", c.getTitle());
-                    card.setAttribute("cardUrl", c.getUrl());
-                    selcardsElem.appendChild(card);
+        if(completedPhase==null 
+                || completedPhase==GamePhase.SelectCard){
+            List<Player> pskeys = Utils.Shuffle(selcards.keySet());
+            if (ge.getPhase() == GamePhase.Vote || ge.getPhase() == GamePhase.Results
+                    || ge.getPhase() == GamePhase.End) {
+                if (selcards != null && selcards.size() > 0) {
+                    Element selcardsElem = doc.createElement("CardsOnTable");
+                    for (Player p : pskeys) {
+                        Card c = selcards.get(p);
+                        Element card = doc.createElement("Card");
+                        card.setAttribute("cardId", c.getName());
+                        card.setAttribute("cardTitle", c.getTitle());
+                        card.setAttribute("cardUrl", c.getUrl());
+                        selcardsElem.appendChild(card);
+                    }
+                    gameInfo.appendChild(selcardsElem);
                 }
-                gameInfo.appendChild(selcardsElem);
             }
         }
 
         // Add the results of this round: cards and votes are uncovered
-        if (ge.getPhase() == GamePhase.Results
-                || ge.getPhase() == GamePhase.End) {
-            Element votesElem = doc.createElement("Votes");
-            Element selectionElem = doc.createElement("UncoveredCards");
+        if(completedPhase==null 
+                || completedPhase==GamePhase.Vote){
+            if (ge.getPhase() == GamePhase.Results
+                    || ge.getPhase() == GamePhase.End) {
+                Element votesElem = doc.createElement("Votes");
+                Element selectionElem = doc.createElement("UncoveredCards");
 
-            Map<Player, Card> selection = ge.getCardSelection();
-            Map<Player, Card> votes = ge.getVotes();
+                Map<Player, Card> selection = ge.getCardSelection();
+                Map<Player, Card> votes = ge.getVotes();
 
-            for (Player chooser : selection.keySet()) {
-                Card selectedCard = selection.get(chooser);
-                Element selElem = doc.createElement("Selection");
-                selElem.setAttribute("by", chooser.getName());
-                selElem.setAttribute("card", selectedCard.getName());
-                selectionElem.appendChild(selElem);
+                for (Player chooser : selection.keySet()) {
+                    Card selectedCard = selection.get(chooser);
+                    Element selElem = doc.createElement("Selection");
+                    selElem.setAttribute("by", chooser.getName());
+                    selElem.setAttribute("card", selectedCard.getName());
+                    selectionElem.appendChild(selElem);
+                }
+                gameInfo.appendChild(selectionElem);
+
+                for (Player voter : votes.keySet()) {
+                    Card votedCard = votes.get(voter);
+                    Element voteElem = doc.createElement("Vote");
+                    voteElem.setAttribute("by", voter.getName());
+                    voteElem.setAttribute("toCard", votedCard.getName());
+                    votesElem.appendChild(voteElem);
+                }
+                gameInfo.appendChild(votesElem);
             }
-            gameInfo.appendChild(selectionElem);
-
-            for (Player voter : votes.keySet()) {
-                Card votedCard = votes.get(voter);
-                Element voteElem = doc.createElement("Vote");
-                voteElem.setAttribute("by", voter.getName());
-                voteElem.setAttribute("toCard", votedCard.getName());
-                votesElem.appendChild(voteElem);
-            }
-            gameInfo.appendChild(votesElem);
         }
 
         // If the match has been finished, let's communicate the winner
@@ -620,6 +577,35 @@ public class Dixit extends HttpServlet {
         }
 
         root.appendChild(gameInfo);
+    }
+    
+    public synchronized void pushUpdate(GameExecution ge, GamePhase completed) throws Exception {
+        for (String destUser : contexts.keySet()) {
+            Document data = mngXML.newDocument("update");
+            this.addGameInfoSubtree(data, ge, destUser, completed);
+
+            deliverMessage(destUser, data);
+        } // end for(contexts)        
+    }
+    
+    public synchronized void deliverMessage(String destUser, Document data) throws Exception {
+        UserAsyncContext ctx = contexts.get(destUser);
+        synchronized (ctx) {
+            ctx._queue.add(data);
+            AsyncContext asyncCtx = ctx._async.get();
+            if (asyncCtx != null && ctx._async.compareAndSet(asyncCtx, null)) {
+                OutputStream os = asyncCtx.getResponse().getOutputStream();
+                mngXML.transform(os, data);
+                asyncCtx.complete();
+            }
+        }       
+    }
+    
+    public Document buildErrorMsg(String msg){
+        Document errMsg = mngXML.newDocument("error");
+        Element root = errMsg.getDocumentElement();
+        root.setTextContent(msg);
+        return errMsg;
     }
 
     public GameAction getOperationFromString(String str) {

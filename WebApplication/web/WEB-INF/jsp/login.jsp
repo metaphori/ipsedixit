@@ -4,6 +4,7 @@
     Author     : Roberto Casadei <roberto.casadei12@studio.unibo.it>
 --%>
 
+<%@page import="java.util.ArrayList"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <!DOCTYPE html>
@@ -21,7 +22,7 @@
 
         <h1>Login</h1>
         
-        <%@ include file="/WEB-INF/jspf/msg.jspf" %>
+        <%@ include file="/WEB-INF/jspf/form_errors.jspf" %>
         
         <% if(session.getAttribute("username")==null){ %>
 
@@ -29,12 +30,13 @@
 
             <div class="formrow">
                 <label for="username">Username</label>
-                <input type="text" size="20" maxlength="20" name="username" />
+                <input type="text" size="20" maxlength="20" name="username" id="username" 
+                       value="${pageContext.request.getParameter("username")}"/>
             </div>    
 
             <div class="formrow">
                 <label for="password">Password</label>
-                <input type="password" size="20" maxlength="20" name="password" />
+                <input type="password" size="20" maxlength="20" name="password" id="password" />
             </div>
 
             <div class="formrow">
@@ -43,7 +45,6 @@
 
         </form>
         <% } %>
-
 
         <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>
 

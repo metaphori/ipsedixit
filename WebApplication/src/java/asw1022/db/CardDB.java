@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- *
+ * The database for the cards of the game.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 @XmlRootElement(name="cards")

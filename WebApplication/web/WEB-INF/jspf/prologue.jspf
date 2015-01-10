@@ -1,26 +1,30 @@
-       <div id="top">            
-            <div class="left">
-                <span><i class="fa fa-tasks"></i> Progetto per il corso ASW 14-15</span> 
-            </div>           
-            <div class="right">
-                <span>Roberto Casadei <i class="fa fa-graduation-cap"></i></span>
-            </div>   
-            <div class="center">
-                <span><i class="fa fa-university"></i> Ipse Dixit <i class="fa fa-university"></i></span>
-            </div>
-           
+
+        <div id="top">            
+                <div class="right">
+                    <% if (session.getAttribute("username") != null) {%>
+                    <span class="headertext">
+                        Hello, <u><%= session.getAttribute("username")%></u>! 
+                    </span>
+                    <% } %>                    
+                </div>
            <div class="clearer"></div>
         </div>
         
         <div id="header">
             
             <div id="hinner">
-                <span id="headerbar"> 
-                    <a href="${pageContext.request.contextPath}/Home"><i class="fa fa-sitemap"></i></a>
-                    <span id="pagetitle">
-                        <% if(request.getAttribute("PageTitle")!=null){ out.print(request.getAttribute("PageTitle")); } %>
-                    </span>  
-                </span>
+                <div class="left mleft200">
+                    <span class="headertext"> 
+                        <a href="${pageContext.request.contextPath}/Home"><i class="fa fa-sitemap"></i></a>
+                        <span id="pagetitle">
+                            <% if(request.getAttribute("PageTitle")!=null){ out.print(request.getAttribute("PageTitle")); } %>
+                        </span>  
+                    </span>
+                </div>
+                <div class="right">
+                  
+                </div>
+                <div class="clearer"></div>
             </div>
             
         </div>

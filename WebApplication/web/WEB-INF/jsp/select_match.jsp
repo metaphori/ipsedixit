@@ -36,7 +36,8 @@
             <thead>
                 <tr>
                     <td></td>
-                    <td>Name</td>
+                    <td>id</td>
+                    <td>Title</td>
                     <td># players</td>
                     <td># joins</td> 
                     <td>Phase</td>
@@ -44,12 +45,17 @@
             </thead>
             <tbody>
         <% for(GameExecution m : matches){ %>
-            <tr>
+        <% boolean inMatch = m.getPlayerByName((String)session.getAttribute("username"))!=null; %>
+        <% boolean waitingPs = m.getPlayers().size() < m.getMatchConfiguration().getNumPlayers(); %>
+            <tr class="<%= m.getPhase().toString() %><%= (inMatch?" inMatch":"") %>">
                 <td>
-                    <% if(m.getPlayers().size() < m.getMatchConfiguration().getNumPlayers()){ %>
+                    <% if(inMatch){ %>
+                    <a href="${pageContext.request.contextPath}/Play?match=<%= m.getName() %>">Access</a>
+                    <% } else if(waitingPs){ %>
                     <a href="${pageContext.request.contextPath}/Play?match=<%= m.getName() %>">Play</a>
                     <% } %>
                 </td>
+                <td><%= m.getName() %></td>
                 <td><%= m.getTitle() %></td>
                 <td><%= m.getMatchConfiguration().getNumPlayers() %></td>
                 <td><%= m.getPlayers().size() %></td>

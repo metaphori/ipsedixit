@@ -123,6 +123,9 @@ $().ready(function(){
 function performAction(action, actionData){
     onsuccess = function(res){};
     onsuccessEnd = function(res){};
+    onerror = function(err){ 
+        alert("Errore: " + err.documentElement.textContent); 
+    };
     
     if(action==="join" && VIEWMODEL.phase()==="setup" && !VIEWMODEL.joined()){
         console.log("Joining the game...");
@@ -155,7 +158,7 @@ function performAction(action, actionData){
         data = createVoteCardXmlData(actionData.user, actionData.match, actionData.card);
     } else if(action==="proceed" && VIEWMODEL.phase()==="results"){
         console.log("Proceeding to next round");
-        data = createBasicXmlData("ok", actionData.user, actionData.match);
+        data = createProceedXmlData(actionData.user, actionData.match);
         onsuccess = function(res){
             VIEWMODEL.proceeded(true);
         };        
@@ -174,6 +177,13 @@ function performAction(action, actionData){
             data: data,
             success: function(res){
                 if(res){
+                    root = res.documentElement.tagName;
+                    
+                    if(root==="error"){
+                        onerror(res);
+                        return;
+                    }
+                    
                     onsuccess(res);
                     
                     var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
@@ -186,7 +196,7 @@ function performAction(action, actionData){
                 }
             },
             error: function(err){
-                console.log("Error: "+err);
+                setError(err);
                 if(action!=="pop")
                     performAction("pop", actionData);                 
             }
@@ -213,10 +223,10 @@ function onGameUpdate(res){
     
     docname = res.documentElement.tagName;
     
-    if(docname==="Timeout"){
+    if(docname==="timeout"){
         console.log("Timeout");
     }
-    else if(docname==="Update"){
+    else if(docname==="update"){
         MSG = res;
         console.log("Msg " + res.documentElement.tagName);
         var gameinfo = res.documentElement.getElementsByTagName("GameInfo")[0];
@@ -224,9 +234,7 @@ function onGameUpdate(res){
             syncWithGameInfo(gameinfo);
         }
     }
-    else if(docname==="End"){
-        return;
-    } else{
+    else{
         return;
     }
     
@@ -256,6 +264,7 @@ function syncWithGameInfo(gameinfo){
     
     if(phase==="setPhrase"){
         // cleanup at beginning of every round
+        VIEWMODEL.clue(null);
         VIEWMODEL.tablecards.removeAll();
         VIEWMODEL.selectedCard(null);
         VIEWMODEL.votedCard(null);
@@ -315,12 +324,20 @@ function uncoverCards(selectionElem){
 
 function setVotes(votesElem){
     var votes = votesElem.getElementsByTagName("Vote");
+    
+    // Reset vote count
+    for (k = 0; k < VIEWMODEL.tablecards().length; k++) {
+        VIEWMODEL.tablecards()[k].votes.removeAll();
+    }      
+    
+    // Add votes
     for(i = 0; i<votes.length; i++){
         by = votes[i].getAttribute("by");
         to = votes[i].getAttribute("toCard");
         for(k = 0; k < VIEWMODEL.tablecards().length; k++){
             if(VIEWMODEL.tablecards()[k].cardName===to){
                 VIEWMODEL.tablecards()[k].votes.push(by);
+                continue;
             }
         }        
     }
@@ -357,7 +374,7 @@ function setTableCards(cards){
                     }
                },
                showDetails: function(card){
-                   if(VIEWMODEL.phase()==="results"){
+                   if(VIEWMODEL.phase()==="results" || VIEWMODEL.phase()==="end"){
                         content = $('<p>Chosen by: <em>' + this.by() + "</em></p>");
                         for(i=0; i<this.votes().length; i++){
                             content.append(' <i class="fa fa-check-square"></i> <span>'+this.votes()[i]+'</span> ')
@@ -453,6 +470,10 @@ function createVoteCardXmlData(user, match, cardId){
     cardElem.appendChild(data.createTextNode(cardId));
     data.documentElement.appendChild(cardElem);
     return data;    
+}
+
+function createProceedXmlData(user, match){
+    return createBasicXmlData("ok", user, match);
 }
 
 /*************************/

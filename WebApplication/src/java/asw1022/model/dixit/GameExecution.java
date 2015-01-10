@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * This class keeps the state of a single game execution.
+ * This class keeps the state of a single game execution (a match).
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 public class GameExecution {
@@ -31,6 +31,7 @@ public class GameExecution {
     protected String phrase;
     protected int pointLimit = 3;
     protected Player winner = null;
+    protected List<Player> pIsOk = new ArrayList<Player>();
     
     public GameExecution(MatchConfiguration match, 
             List<Card> allcards, 
@@ -52,24 +53,44 @@ public class GameExecution {
         this.addPlayer(first);
     } 
     
+    /**
+     * It generates a unique match name.
+     * @return 
+     */
     protected String GenerateUniqueName(){
         Calendar cal = Calendar.getInstance();
         Long timems = cal.getTimeInMillis();
         return "m"+timems.hashCode();
     }
     
+    /**
+     * 
+     * @return the (unique) name of the match
+     */
     public String getName(){
         return this.name;
     }
     
+    /**
+     * 
+     * @return the title of the match
+     */
     public String getTitle(){
         return this.title;
     }
     
+    /**
+     * It sets the title of the match.
+     * @param title 
+     */
     public void setTitle(String title){
         this.title = title;
     }
     
+    /**
+     * 
+     * @return the match configuration
+     */
     public MatchConfiguration getMatchConfiguration(){
         return this.matchConfig;
     }
@@ -78,6 +99,15 @@ public class GameExecution {
     /* PHASE: Setup */
     /************************************/     
     
+    /**
+     * Adds a player to the match.
+     * <p>
+     * When all the players have joined the match,
+     * the game starts and the moves to the "setPhrase" phase.
+     * @param p The player.
+     * @throws GameException if the request is made in the wrong phase or if 
+     * no more players can be added.
+     */
     public synchronized void addPlayer(Player p) throws GameException {
         if(this.phase != GamePhase.Setup)
             throw new GameException("Wrong phase. Trying to add player but phase is " + this.phase);
@@ -106,6 +136,16 @@ public class GameExecution {
     /* PHASE: Set Phrase */
     /************************************/      
     
+    /**
+     * It allows the player that owns the turn to provide the clue.
+     * <p>
+     * When the player has given his/her clue, the game moves
+     * to the "select" phase.
+     * @param p The player.
+     * @param phrase The clue.
+     * @throws GameException if the request is made in the wrong phase or 
+     * if the player that made the request does not own the turn.
+     */
     public synchronized void setPhrase(Player p, String phrase) throws GameException{
         if(this.phase != GamePhase.SetPhrase)
             throw new GameException("Wrong phase. Trying to set phrase but phase is " + this.phase);        
@@ -119,6 +159,16 @@ public class GameExecution {
     /* PHASE: Select Card */
     /************************************/     
     
+    /**
+     * It allows a player to select the card identified by cardName argument.
+     * <p>
+     * When all the players have selected their card, the game
+     * moves to the "Vote" phase.
+     * @param p The player.
+     * @param cardName The (unique) name of the card.
+     * @throws GameException if the request is made in the wrong phase, if the player has
+     *  already selected a card, or if the card does not belong to the player.
+     */
     public synchronized void selectCard(Player p, String cardName) throws GameException{
         if(this.phase != GamePhase.SelectCard)
             throw new GameException("Wrong phase. Trying to select card but phase is " + this.phase);
@@ -155,6 +205,10 @@ public class GameExecution {
         }
     }    
 
+    /**
+     * It allows the player p to pick the card at the top of the deck,
+     * @param p The player.
+     */
     public synchronized void pickCardFromDeck(Player p){
         Card c = deck.removeFirst();
         this.cardsPerPlayer.get(p).add(c);
@@ -164,6 +218,17 @@ public class GameExecution {
     /* PHASE: Vote */
     /************************************/     
     
+    /**
+     * It allows a player to vote the card identified by the cardName argument.
+     * <p>
+     * When all the players (except the player that owns the turn) have voted,
+     * the game moves to the "Results" phase or to the "End" phase if any
+     * player has reached to max number of points.
+     * @param voter The player.
+     * @param cardName The (unique) name of the card.
+     * @throws GameException if the request is made in the wrong phase, if the player has
+     * already voted, or if the player is trying to vote the card he/she has selected previously.
+     */
     public synchronized void vote(Player voter, String cardName) throws GameException{
         if(this.phase != GamePhase.Vote)
             throw new GameException("Wrong phase. Trying to vote but phase is " + this.phase);
@@ -175,6 +240,9 @@ public class GameExecution {
         for(Player p : this.selectedCardForPlayer.keySet()){
             Card c = this.selectedCardForPlayer.get(p);
             if(c.getName().equals(cardName)){
+                if(p.equals(voter))
+                    throw new GameException("Player " + voter.getName() + " is trying to vote "
+                            + "his own card.");
                 votedByCard = p;
                 break;
             }
@@ -204,6 +272,17 @@ public class GameExecution {
         }
     }
     
+    /**
+     * It updates the results for the current round.
+     * <p>
+     * The player that owns the turn receives 3 points if at least one player (but not 
+     * all the players) has voted his/her card. The players that voted that card 
+     * are given 3 points as well. Moreover, each player gets 1 point for each vote
+     * has been assigned to his/her card.
+     * Otherwise, if all or none of the players have voted
+     * the card of the player that owns the turn, 
+     * the latter receives no points (0), and all the players receive 2 points.
+     */
     protected synchronized void CalculatePoints(){
         int nVotesTurn = 0;
         List<Player> votersOfTurn = new ArrayList<Player>();
@@ -246,9 +325,16 @@ public class GameExecution {
         
     /************************************/
     /* PHASE: Results */
-    /************************************/    
+    /************************************/
     
-    protected List<Player> pIsOk = new ArrayList<Player>();
+    /**
+     * It allows a player to signal his/her intention to proceed to the next round.
+     * <p>
+     * When all the players have notified their intention to proceed,
+     * the turn goes to the next player and a new round starts.
+     * @param player The player.
+     * @throws GameException if the request is made in the wrong phase.
+     */
     public synchronized void proceed(Player player) throws GameException {
         if(this.phase != GamePhase.Results)
             throw new GameException("Wrong phase. You are ok but phase is " + this.phase);
@@ -263,7 +349,12 @@ public class GameExecution {
         }
     }
     
-    public synchronized Player nextTurn() throws GameException {
+    /**
+     * It determines the next player of turn and the game moves to the "setPhrase" phase.
+     * @return the next player that owns the turn.
+     * @throws GameException if the request is made in the wrong phase.
+     */
+    protected synchronized Player nextTurn() throws GameException {
         if(this.phase != GamePhase.Results)
             throw new GameException("Wrong phase. Trying to next turn but phase is " + this.phase);        
         
@@ -362,7 +453,11 @@ public class GameExecution {
         return this.selectedCardForPlayer;
     }
     
-    public synchronized Map<Player,Card> getVotes() throws GameException {
+    /**
+     * 
+     * @return a map from players to the card they have voted.
+     */
+    public synchronized Map<Player,Card> getVotes() {
         Map<Player,Card> result = new HashMap<Player,Card> ();
                 
         for(Player voter : votes.keySet()){

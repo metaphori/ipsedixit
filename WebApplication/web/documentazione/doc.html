@@ -7,7 +7,7 @@
         
         <style type="text/css">
             body { color: #000; font-family: 'Verdana', sans-serif; font-size:120%; }
-            h1, h2, h3, h4 { color: #1B3C6B; margin:10px; margin-top:40px; margin-right:80px;  }
+            h1, h2, h3, h4, h5 { color: #1B3C6B; margin:10px; margin-top:40px; margin-right:80px;  }
             h1 { font-size:280%; }
             h2 { font-size:180%; }
             h3 { font-size:150%; }
@@ -21,6 +21,9 @@
             img { display:block; margin:20px auto; border:10px solid #444; }
             pre { margin:10px 80px 10px 80px; background-color:#ededed; padding:20px;
             border:10px solid #444;}
+            .explain { margin-left: 80px; border-left:8px solid #ddd; padding-left:10px; 
+            background-color:#eee;}
+            .explain p { margin-left:5px; }
         </style>
             
         
@@ -100,11 +103,42 @@
         
         <p>Il sito è realizzato con architettura <em>Model-View-Controller (MVC)</em>.</p>
         
+        <div class="explain">
+            <p>Il pattern MVC è implementato nella seguente modalità:</p>
+            
+            <ul>
+                <li>Ogni servlet rappresenta una specifica <em>azione</em>.</li>
+                <li>Servlet (cioè azioni) correlate sono organizzate in package.</li>
+                <li>L'accesso al modello è mediato da classi Manager e Repository.</li>
+                <li>Le viste (pagine JSP) sono selezionate mediante forwarding.</li>
+            </ul>
+            
+            <p>L'approccio 1-servlet-per-azione differisce da quello impiegato in framework 
+             come Rails o ASP.NET MVC dove si hanno classi di tipo "Controller" e 
+            i metodi esposti rappresentano le azioni.</p>
+            
+            <p>Un vantaggio consiste nel fatto che ad ogni classe servlet viene
+             associata una ben precisa responsabilità, che ne semplifica la
+             comprensione. (<em>Single Responsibility Principle (SRP)</em>).</p>
+            
+        </div>
+        
         <p>La RIA JavaScript fa uso della libreria Knockout per realizzare 
             il pattern <em>Model-View-ViewModel (MVVM)</em>. </p>
         
         <p>L'accesso ai dati (database XML) da parte dei controller/servlet 
             è mediato attraverso il pattern <em>Repository</em>.</p>
+        
+        <p>La logica relative a query complessi ai dati è incapsulata all'interno di 
+            classi <em>Manager</em>.</p>
+        
+        <div class="explain">
+            <p>In questo modo, i controller vengono semplificati in quanto 
+             gli è stata tolta la responsabilità di eseguire query particolarmente elaborate.
+             Si tratta di un'applicazione del principio <em>Keep It Simple Stupid (KISS)</em>.
+             Questa caratteristica diventa più importante quando la complessità dei 
+            controller cresce.</p>
+        </div>
         
         <p>Essendo la parte di autorizzazione un "crosscutting concern", la logica di 
         controllo che solo gli utenti autenticati possano accedere alle parti del sito
@@ -359,6 +393,8 @@
             include il <i>footer</i>.</li>
         <li><tt>msg.jsp</tt>: contiene un code snippet per la comunicazione di messaggi (ad es., 
             a seguito di invio di form) con eventualmente la specifica di una pagina di redirect.</li>
+        <li><tt>form_errors.jspf</tt>: contiene un code snippet per la comunicazione degli 
+        errori di validazione server-side per le form.</li>
         </ul>
 
         <p>Con tale organizzazione, le pagine del sito possono essere definite nel modo seguente:</p>
@@ -390,6 +426,42 @@
     
 &lt;/html></pre>
         
+        <h5>Validazione server-side dei dati</h5>
+        
+        <p>Quando una form è inviata (ad es., per registrazione utente o login), oltre alla 
+            validazione client-side implementata in JavaScript, viene effettuata anche una 
+            validazione server-side in quanto la prima può essere facilmente scavalcata
+            e rappresenta quindi una misura  insufficiente per garantire la 
+            correttezza/integrità dei dati.</p>
+        
+        <p>Oltre all'enforcement dei vincoli di validazione dei dati inseriti (ad es., 
+        il match delle due password inserite in fase di registrazione) e delle informazioni
+        da registrare sul server (ad es., dati utente o dati sulle partite), si vuole 
+        fornire all'utente un feedback in merito agli errori di compilazione delle form.</p>
+        
+        <p>A questo scopo, le servlet sono state tipicamente strutturate in modo da prendere 
+            decisioni diverse in merito al forwarding delle pagine JSP sulla base del
+            risultato delle azioni richieste. Gli errori sono passati alla pagina JSP che 
+            contiene la form come lista di oggetti 
+            <a href="javadoc_webapp/asw1022/utils/ValidationError.html">ValidationError</a>
+            allegata alla richiesta (come attributo). Questi oggetti 
+            i quali incapsulano un messaggio di errore ed eventualmente il campo di input
+            a cui sono associati.</p>
+        
+        <p>A questo punto, torna utile il fragment <tt>form_errors.jspf</tt>, 
+            che riporta gli errori come lista HTML e, tramite codice JavaScript
+            generato dinamicamente,
+            cambia lo stile degli input field compilati erroneamente.</p>
+        
+<!--
+        <p>Una nota: nella generazione del codice JavaScript, si è utilizzato il metodo di utilità
+        <tt>StringEscapeUtils.escapeEcmaScript()</tt> fornito dalla libreria
+        <em>Apache Commons Lang</em> (3.3.2) per effettuare l'escape dei nomi
+        dei campi della form che andranno a costituire gli elementi di un array JavaScript.
+        In questo caso è stata una precauzione forse esagerata, ma si è voluto mostrare
+        una pratica importante per evitare attacchi XSS.</p>
+-->
+
         <h4>Web service</h4>
         
         <p>La servlet <tt>asw1022.services.Dixit</tt> è il <em>servizio web XML-over-HTTP</em> che 
@@ -434,9 +506,77 @@
         
         <h3>Informazioni memorizzate sul server</h3>
         
+        <p>Le seguenti informazioni sono memorizzate sul server come database XML.</p>
+        
+        <ul>
+            <li><em>Utenti</em>: gli utenti iscritti al sito (username, password) 
+                sono memorizzati nel file <tt>/WEB-INF/xml/userDB.xml</tt>.</li>
+            <li><em>Carte di gioco</em>: le carte del gioco Dixit (ID, titolo, URL)
+                sono memorizzate nel file <tt>/WEB-INF/xml/cardDB.xml</tt>.</li>
+        </ul>
+        
+        <p>Nota: per ragioni di sicurezza la password non è memorizzata in chiaro, 
+            ma il suo hash SHA-256. In questo modo, nemmeno gli amministratori del sito
+            possono accedere alle password degli utenti.</p>
+        
+        <p>I file XML Schema che descrivono la struttura dei suddetti file XML sono i seguenti
+            (sotto <tt>/xml-types/db/</tt>):</p>
+        
+        <ul>
+            <li><a href="xml-types/db/user_db.xsd">user_db.xsd</a></li>
+            <li><a href="xml-types/db/card_db.xsd">card_db.xsd</a></li>
+        </ul>
+        
+        
         <h3>Informazioni scambiate in rete</h3>
         
+        <p>In rete vengono scambiati, tra la RIA JavaScript e il web service XML-over-HTTP,
+            dei documenti XML che rappresentano le azioni utente, gli esiti di tali azioni, 
+            e rappresentazioni XML dello stato delle partite.</p>
         
+        <p>Le azioni utente (richieste) sono documenti XML con elemento radice 
+            che ha il nome dell'azione (ad es. <tt>&lt;join&gt;</tt>, <tt>&lt;setPhrase&gt;</tt> ecc.),
+            con un elemento figlio per ogni parametro. In particolare, è sempre presente 
+            un figlio <tt>&lt;user&gt;</tt> con il nome dell'utente che effettua l'azione
+            (viene comunque controllato lato server che corrisponda all'utente in sessione)
+            e un figlio <tt>&lt;match&gt;</tt> con il nome della partita che si sta giocando.
+            Per quanto riguarda le azioni specifiche, <tt>setPhrase</tt> implicherà un 
+            figlio <tt>&lt;phrase&gt;</tt> con il testo dell'indizio, mentre <tt>selectCard</tt> e <tt>voteCard</tt> 
+            includeranno un figlio <tt>&lt;card&gt;</tt> con il nome della carta in questione 
+            nel testo dell'elemento.</p>
+        
+        <p>Per quanto riguarda le risposte, sono di quattro tipi:</p>
+        
+        <ol>
+            <li><tt>&lt;ok&gt;</tt>: con corpo vuoto, con un'eccezione quando è in risposta a una
+            richiesta di tipo <tt>join</tt> e la partita è già cominciata, nel qual caso si
+            ritorna anche lo stato della partita.</li>
+            <li><tt>&lt;error&gt;</tt>: contiene il testo di un messaggio d'errore come contenuto.</li>
+            <li><tt>&lt;timeout&gt;</tt>: corpo vuoto; serve per indicare che la connessione è "viva".</li>
+            <li><tt>&lt;update&gt;</tt>: contiene lo stato della partita, 
+                espresso da un elemento di tipo <tt>GameInfo</tt>.</li>
+        </ol>
+        
+        <p>Di seguito sono linkati i file XSD per i documenti XML non banali scambiati in rete:</p>
+        
+        <ul>
+            <li><em>Requests</em><ul>
+                    <li><a href="xml-types/requests/join_request.xsd">join_request.xsd</a></li>
+                    <li><a href="xml-types/requests/pop_request.xsd">pop_request.xsd</a></li>
+                    <li><a href="xml-types/requests/proceed_request.xsd">proceed_request.xsd</a></li>
+                    <li><a href="xml-types/requests/selectCard_request.xsd">selectCard_request.xsd</a></li>
+                    <li><a href="xml-types/requests/setPhrase_request.xsd">setPhrase_request.xsd</a></li>
+                    <li><a href="xml-types/requests/voteCard_request.xsd">voteCard_request.xsd</a></li>                    
+            </ul></li>
+            <li><em>Responses</em><ul>
+                    <li><a href="xml-types/responses/ok_response.xsd">ok_response.xsd</a></li>
+                    <li><a href="xml-types/responses/update_response.xsd">update_response.xsd</a></li>
+            </ul></li>
+        </ul>
+        
+        <p>NOTA: per riusare <tt>GameInfoType</tt> 
+        (<a href="xml-types/responses/GameInfo.xsd">GameInfo.xsd</a>) si è fatto uso dell'elemento 
+        XML Schema <tt>include</tt> nei XSD delle risposte <tt>ok</tt> e <tt>update</tt>.</p>
         
         <h2>Ulteriori informazioni</h2>
         
@@ -455,7 +595,7 @@
             <li><em>Knockout</em>: <a href="http://knockoutjs.com/documentation/introduction.html">Knockout JS documentation</a></li>
             <li><em>Validazione</em>: <a href="http://validator.w3.org/">Markup Validation Checker</a>,
                 <a href="http://jigsaw.w3.org/css-validator/validator">CSS Validation Service</a></li>
-            
+            <li><em>XSD Validation</em>: <a href="http://www.utilities-online.info/xsdvalidation/">Online XSD Validation</a></li>
         </ul>
         
     </body>

@@ -14,4 +14,15 @@
                 <img width="70" src="${pageContext.request.contextPath}/multimedia/icon_css3.png" 
                      alt="CSS3 badge" />
             </p>
+            
+            <p class="notice">NOTE: the images of Dixit are used for demonstrative purposes.
+                The pictures belong to their respective owners.</p>
+            
+            <div class="left">
+                <span><i class="fa fa-tasks"></i> Progetto per il corso ASW 14-15</span> 
+            </div>           
+            <div class="right">
+                <span>Roberto Casadei <i class="fa fa-graduation-cap"></i></span>
+            </div>   
+           <div class="clearer"></div>            
         </div>

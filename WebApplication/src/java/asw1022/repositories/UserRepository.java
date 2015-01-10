@@ -2,6 +2,7 @@ package asw1022.repositories;
 
 import asw1022.model.User;
 import asw1022.db.UserDB;
+import asw1022.kb.AppKB;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ import javax.xml.bind.Unmarshaller;
 public class UserRepository extends Repository<User> {
 
     public UserRepository(String xmlDB) throws JAXBException{
-        super(xmlDB, UserDB.class, User.class);
+        super(xmlDB, AppKB.XML_SCHEMA_DIR+"db/user_db.xsd", UserDB.class, User.class);
     }
     
 }

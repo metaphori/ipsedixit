@@ -45,10 +45,11 @@ public class BaseServlet extends HttpServlet {
             logger.severe("Eccezione: " + ex.getMessage());
         }        
     }
+    
     public void Forward(HttpServletRequest request, 
             HttpServletResponse response,
             String jspName) throws ServletException {
         Forward(request, response, jspName, null);
-    }    
+    }       
     
 }

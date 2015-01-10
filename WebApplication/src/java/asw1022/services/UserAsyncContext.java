@@ -35,7 +35,7 @@ class UserAsyncContext extends AsyncAdapter {
     public void onTimeout(AsyncEvent aev) {
         try {
             ManageXML mngXML = new ManageXML();
-            Document answer = mngXML.newDocument("Timeout");
+            Document answer = mngXML.newDocument("timeout");
 
             synchronized(this){
                 AsyncContext async = _async.get();

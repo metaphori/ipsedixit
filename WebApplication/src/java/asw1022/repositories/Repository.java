@@ -3,6 +3,7 @@ package asw1022.repositories;
 import asw1022.db.IDB;
 import asw1022.model.User;
 import asw1022.db.UserDB;
+import asw1022.kb.AppKB;
 import asw1022.model.BasicObject;
 import java.io.File;
 import java.util.ArrayList;
@@ -22,15 +23,21 @@ public class Repository<T extends BasicObject> implements IRepository<T> {
 
     protected JAXBContext jc;
     protected String xmlDB;
+    protected String xsd;
     
     protected Class dbClass;
     protected Class itemClass;
     
-    public Repository(String xmlDB, Class dbClass, Class itemClass) throws JAXBException{
+    public Repository(String xmlDB, String xsdFile, Class dbClass, Class itemClass) throws JAXBException{
         this.jc = JAXBContext.newInstance(dbClass, itemClass);
         this.dbClass = dbClass;
         this.itemClass = itemClass;
         this.xmlDB = xmlDB;
+        this.xsd = xsdFile;
+    }
+    
+    public Repository(String xmlDB, Class dbClass, Class itemClass) throws JAXBException {
+        this(xmlDB, null, dbClass, itemClass);
     }
     
     @Override
@@ -54,6 +61,11 @@ public class Repository<T extends BasicObject> implements IRepository<T> {
         Marshaller ms;
         try {
             ms = jc.createMarshaller();
+            ms.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            
+            if(this.xsd!=null)
+                ms.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, this.xsd);
+
             IDB<T> db = (IDB<T>)dbClass.newInstance();
             db.setItems(items);
             File file = new File(xmlDB);

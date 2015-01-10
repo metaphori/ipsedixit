@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- *
+ * The database for the website users.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 @XmlRootElement(name="users")

@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package asw1022.model;
 
 /**
- *
+ * Basic object model.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 public abstract class BasicObject {

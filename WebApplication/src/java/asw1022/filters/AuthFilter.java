@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- *
+ * Servlet filter for authorization.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
 public class AuthFilter implements Filter {
@@ -31,10 +31,6 @@ public class AuthFilter implements Filter {
     
     private void doBeforeProcessing(ServletRequest request, ServletResponse response)
             throws IOException, ServletException {
-        if (debug) {
-            log("AuthFilter:DoBeforeProcessing");
-        }
-
         HttpServletRequest req = (HttpServletRequest)request;
         HttpSession session = req.getSession();
         Object username = session.getAttribute("username");
@@ -50,9 +46,6 @@ public class AuthFilter implements Filter {
     
     private void doAfterProcessing(ServletRequest request, ServletResponse response)
             throws IOException, ServletException {
-        if (debug) {
-            log("AuthFilter:DoAfterProcessing");
-        }
     }
 
     /**
@@ -67,10 +60,6 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response,
             FilterChain chain)
             throws IOException, ServletException {
-        
-        if (debug) {
-            log("AuthFilter:doFilter()");
-        }
         
         doBeforeProcessing(request, response);
         

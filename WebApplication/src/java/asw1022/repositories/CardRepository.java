@@ -3,6 +3,7 @@ package asw1022.repositories;
 import asw1022.db.CardDB;
 import asw1022.model.User;
 import asw1022.db.UserDB;
+import asw1022.kb.AppKB;
 import asw1022.model.dixit.Card;
 import java.io.File;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import javax.xml.bind.Unmarshaller;
 public class CardRepository extends Repository<Card> {
 
     public CardRepository(String xmlDB) throws JAXBException{
-        super(xmlDB, CardDB.class, Card.class);
+        super(xmlDB, AppKB.XML_SCHEMA_DIR+"db/card_db.xsd", CardDB.class, Card.class);
     }
     
 }

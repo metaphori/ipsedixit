@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package asw1022.filters;
 
 import asw1022.model.dixit.GameExecution;
@@ -29,7 +23,7 @@ public class DixitContextListener implements ServletContextListener {
         ServletContext app = sce.getServletContext();
         Object obj = app.getAttribute("Matches");
         if (obj == null) {
-            // Look for persisted matches
+            // TODO: Look for persisted matches
             
             HashMap<String, GameExecution> matches = new HashMap<String, GameExecution>();
             app.setAttribute("Matches", matches);
@@ -40,7 +34,7 @@ public class DixitContextListener implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent sce) {
         HashMap<String, GameExecution> matches = 
                 (HashMap<String, GameExecution>) sce.getServletContext().getAttribute("Matches");
-        // Persist matches
-        
+
+        // TODO: Persist matches
     }
 }

@@ -1,12 +1,15 @@
 package asw1022.controllers.user;
 
 import asw1022.controllers.BaseServlet;
+import asw1022.managers.UserManager;
 import asw1022.model.User;
 import asw1022.repositories.IRepository;
 import asw1022.repositories.UserRepository;
 import asw1022.util.security.SecurityUtils;
+import asw1022.utils.ValidationError;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +27,7 @@ import javax.servlet.http.HttpSession;
  */
 @WebServlet(urlPatterns = "/Login")
 public class LoginServlet extends BaseServlet {
-
+    
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -63,27 +66,40 @@ public class LoginServlet extends BaseServlet {
     public boolean loginAction(HttpServletRequest request, HttpServletResponse res) throws ServletException {
         // 1) Prepare data
         HttpSession session = request.getSession();
+        List<ValidationError> errors = new ArrayList<ValidationError>();
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         
-        password = SecurityUtils.SHA(password);
+        // 2) Validate presence
+        if(username==null || username.trim().length()==0){
+            errors.add(new ValidationError("username", "Username must be provided."));
+        }
+        if(password==null || password.trim().length()==0){
+            errors.add(new ValidationError("password", "Password must be provided"));
+        }
         
-        // 2) Check if the user/pass pair exists
+        if(errors.size()>0){
+            request.setAttribute("Errors", errors);
+            return false;
+        }
+        
+        // 3) Transform/normalize data
+        username = username.trim().toLowerCase();
+        password = SecurityUtils.SHA(password.trim());
+        
+        // 4) Check if the user/pass pair exists
         ServletContext app = getServletContext();
         String userDB = app.getRealPath(app.getInitParameter("userDB"));
         boolean found = false;
         try {
             IRepository<User> repo = new UserRepository(userDB);
-            List<User> users = repo.readAll();
-            for(User us : users){
-                if(us.getName().equals(username) &&
-                        us.getPassword().equals(password)){
-                    found = true;
-                    break;
-                }
-            }
+            UserManager umng = new UserManager(repo);
+            User userFound = umng.findByUsernameAndPassword(username,password);
+            if(userFound!=null)
+                found = true;
         } catch (Exception ex) {
-            Logger.getLogger("UserController#loginAction").log(Level.SEVERE, null, ex);
+            Logger.getLogger("UserController#loginAction").log(Level.SEVERE, 
+                    "Due to an exception, we cannot verify if login was successful.", ex);
         }
         
         if(found){
@@ -92,7 +108,7 @@ public class LoginServlet extends BaseServlet {
             return true;
         }
         else{
-            request.setAttribute("msg", "Login FAILED.");
+            request.setAttribute("msg", "The provided credentials have no match. Login failed.");
             return false;
         }        
     }
