@@ -23,6 +23,8 @@
 
         <%@ include file="/WEB-INF/jspf/form_errors.jspf" %>
         
+        <% if(session.getAttribute("username")==null){ %>
+        
         <% if(request.getAttribute("done")==null) { %>
         
         <form method="post" action="${pageContext.request.contextPath}/Register">
@@ -48,6 +50,10 @@
 
         </form>
 
+        <% } %>
+        
+        <% } /* end if(already logged in) */ else { %>
+            <p class="error">You are already logged in.</p>
         <% } %>
         
         <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>

@@ -45,7 +45,7 @@ public class Dixit extends HttpServlet {
         try {
             ServletContext app = getServletContext();
             String cardDB = app.getRealPath(app.getInitParameter("cardDB"));
-            this.crepo = new CardRepository(cardDB);
+            this.crepo = CardRepository.getInstance(cardDB);
 
             // We can read all the cards during initialization
             this.cards = crepo.readAll();

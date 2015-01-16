@@ -21,7 +21,19 @@
 
         <%@ include file="/WEB-INF/jspf/msg.jspf" %>
 
-        <h1>How to play</h1>
+        <h1>Welcome to Ipse Dixit</h1>
+        
+        <p><em>Ipse Dixit</em> is a web application project developed by <em>Roberto Casadei</em>
+            in the context of the Master Degree module <em>Applicazioni e Servizi Web</em> 
+            at Alma Mater Studiorum - University
+            of Bologna.</p>
+        
+        <p>It represents a case study, an <em>exercise</em> on the content covered in the lectures.</p>
+        
+        <p>The subject of the project is <em>Dixit</em>, a card game built on creativity and 
+            intuition. <a href="${pageContext.request.contextPath}/About">Discover more about Dixit</a>.</p>
+        
+        <h2><i class="fa fa-gamepad"></i> How to play</h2>
 
         <ol>
             <li>Register to the site</li>

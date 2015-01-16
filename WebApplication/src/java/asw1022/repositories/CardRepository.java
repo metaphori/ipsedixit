@@ -16,13 +16,13 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 /**
- *
+ * Default Card repository.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class CardRepository extends Repository<Card> {
+public class CardRepository extends CachedCardRepository {
 
-    public CardRepository(String xmlDB) throws JAXBException{
-        super(xmlDB, AppKB.XML_SCHEMA_DIR+"db/card_db.xsd", CardDB.class, Card.class);
+    private CardRepository(String xmlDB) throws JAXBException {
+        super(xmlDB);
     }
     
 }

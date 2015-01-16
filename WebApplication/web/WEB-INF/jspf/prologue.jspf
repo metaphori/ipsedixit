@@ -1,29 +1,37 @@
 
         <div id="top">            
-                <div class="right">
-                    <% if (session.getAttribute("username") != null) {%>
-                    <span class="headertext">
-                        Hello, <u><%= session.getAttribute("username")%></u>! 
-                    </span>
-                    <% } %>                    
-                </div>
-           <div class="clearer"></div>
+            <div class="left">
+                <span><i class="fa fa-tasks"></i> Progetto per il corso ASW 14-15</span> 
+            </div>           
+            <div class="right">
+                <span>Roberto Casadei <i class="fa fa-graduation-cap"></i></span>
+            </div>   
+           <div class="clearer"></div>  
         </div>
         
         <div id="header">
             
             <div id="hinner">
-                <div class="left mleft200">
+                <div id="divlogo">
+                    <img src="${pageContext.request.contextPath}/multimedia/logo.png" 
+                         width="200" />
+                </div>
+                <div id="divuser">
+                    <span class="headertext">
+                        <i class="fa fa-user"></i> 
+                        Hello, <%= session.getAttribute("username") != null 
+                                ? ("<u>"+session.getAttribute("username")+"</u>!")
+                                        : "guest" %> 
+                    </span>
+                </div>                       
+                <div id="divbar">
                     <span class="headertext"> 
                         <a href="${pageContext.request.contextPath}/Home"><i class="fa fa-sitemap"></i></a>
                         <span id="pagetitle">
                             <% if(request.getAttribute("PageTitle")!=null){ out.print(request.getAttribute("PageTitle")); } %>
                         </span>  
-                    </span>
-                </div>
-                <div class="right">
-                  
-                </div>
+                    </span>                  
+                </div>                    
                 <div class="clearer"></div>
             </div>
             

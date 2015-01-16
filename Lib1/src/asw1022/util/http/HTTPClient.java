@@ -8,6 +8,10 @@ import javax.xml.transform.*;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+/**
+ * Basic HTTP client.
+ * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
+ */
 public class HTTPClient {
 
     private URL base = null;

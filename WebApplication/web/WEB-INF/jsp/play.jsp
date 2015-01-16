@@ -128,13 +128,11 @@
     </div>
     
     <div data-bind="style: { display: canTellClue() ? 'block' : 'none' }">
-        <form>
             <label for="cluetxt">Clue:</label>
             <input type="text" name="clue" id="cluetxt" 
                    data-bind="enable: canTellClue"/>
             <input type="button" value="Give it!" id="phrasebtn" 
                    data-bind="enable: canTellClue, click:next_action()" />
-        </form>
     </div>
 </div>      
     

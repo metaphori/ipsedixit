@@ -108,7 +108,8 @@ public class LoginServlet extends BaseServlet {
             return true;
         }
         else{
-            request.setAttribute("msg", "The provided credentials have no match. Login failed.");
+            errors.add(new ValidationError(null, "The provided credentials have no match. Login failed."));
+            request.setAttribute("Errors", errors);
             return false;
         }        
     }

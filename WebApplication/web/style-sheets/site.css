@@ -99,9 +99,13 @@ table {
     font-size:100%;
     font-weight:bold;
     color:#fff;
+    margin-top:20px;
     padding:10px;
 }
-.mleft200 { margin-left:200px; }
+#divlogo { width:200px; float:left; height:60px; }
+#divlogo img { width: 200px; }
+#divbar { margin-left:220px; margin-right:150px; height:60px; }
+#divuser { width:150px; float:right; height:60px; overflow: hidden; }
 
 #leftmenu {
     float:left;
@@ -128,6 +132,7 @@ table {
     background: -o-linear-gradient(#1B3C6B, #000); /* For Opera 11.1 to 12.0 */
     background: -moz-linear-gradient(#1B3C6B, #000); /* For Firefox 3.6 to 15 */
     background: linear-gradient(#1B3C6B, #000); /* Standard syntax (must be last) */    
+    padding-bottom:40px;
 }
 
 /********************/
@@ -192,6 +197,37 @@ tr.setup td {
 tr.end td{
     background-color:#ababab;
     opacity: 0.3;
+}
+
+em {
+    font-weight:bold; 
+}
+
+#content a { color:#a00; text-decoration:none; }
+#content a:hover { color:#f00; text-decoration: underline; }
+
+#message {
+    border:2px solid #666;
+    background-color:#ababab;
+    color:#000;
+    font-weight:bold;
+    padding:0;
+    margin:40px;
+}
+
+#message p {
+    margin:10px;
+}
+
+#message .title {
+    background-color:#666;
+    border:2px solid #666;
+    border-radius: 0 0 10px 0;
+    display:inline-block;
+    margin:0;
+    margin-bottom:10px;
+    padding:4px 25px 4px 25px;
+    color:#ededed;
 }
 
 /*********************/
@@ -329,8 +365,10 @@ tr.end td{
     border-bottom:1px solid #ededed;
     color:#444;
     padding:2px;
-    margin:5px;  
+    margin:5px;
 }
+#content h2 { margin-top:20px; }
+#content h2 i { background-color:#ababab; color:#1B3C6B; padding:5px; border-radius:10px; }
 
 /************************/
 /* Dixit(Game) elements */

@@ -21,7 +21,7 @@
 
         <h1>Create a new match</h1>
         
-        <%@ include file="/WEB-INF/jspf/msg.jspf" %>
+        <%@ include file="/WEB-INF/jspf/form_errors.jspf" %>
         
         <% if(request.getAttribute("done")==null) { %>
 
@@ -29,25 +29,26 @@
 
             <div class="formrow">
                 <label for="matchtitle">Title of the match</label>
-                <input type="text" size="20" maxlength="20" name="matchtitle" id="matchtitle" />
+                <input type="text" size="20" maxlength="20" name="matchtitle" id="matchtitle" 
+                       value="${pageContext.request.getParameter("matchTitle")}"/>
             </div>    
 
             <div class="formrow">
                 <label for="numplayers">Number of players</label>
                 <input type="text" size="2" maxlength="2" name="numplayers" id="numplayers"
-                       value="3" />
+                       value="<%= request.getParameter("numplayers")==null ? "3" : request.getParameter("numplayers") %>" />
             </div>
             
             <div class="formrow">
                 <label for="npoints">Points to reach</label>
                 <input type="text" size="2" maxlength="2" name="npoints" id="npoints"
-                       value="5" />
+                       value="<%= request.getParameter("npoints")==null ? "5" : request.getParameter("npoints") %>" />
             </div>            
 
             <div class="formrow">
                 <label for="ncardsforplayer">Num cards per player</label>
                 <input type="text" size="2" maxlength="2" name="ncardsforplayer" id="ncardsforplayer" 
-                       value="4" />
+                       value="<%= request.getParameter("ncardsforplayer")==null ? "4" : request.getParameter("ncardsforplayer") %>" />
             </div>                  
 
             <div class="formrow">

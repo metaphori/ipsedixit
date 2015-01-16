@@ -1,6 +1,6 @@
 package asw1022.managers;
 
-import asw1022.functional.IPredicate;
+import asw1022.util.functional.IPredicate;
 import asw1022.model.User;
 import asw1022.repositories.IRepository;
 import asw1022.repositories.UserRepository;

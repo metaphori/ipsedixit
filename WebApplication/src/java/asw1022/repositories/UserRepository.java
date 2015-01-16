@@ -14,13 +14,13 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 /**
- *
+ * The default User repository.
  * @author Roberto Casadei <roberto.casadei12@studio.unibo.it>
  */
-public class UserRepository extends Repository<User> {
+public class UserRepository extends UserRepositoryDOM {
 
-    public UserRepository(String xmlDB) throws JAXBException{
-        super(xmlDB, AppKB.XML_SCHEMA_DIR+"db/user_db.xsd", UserDB.class, User.class);
+    public UserRepository(String xmlDB){
+        super(xmlDB);
     }
     
 }

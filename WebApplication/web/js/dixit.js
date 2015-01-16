@@ -113,6 +113,8 @@ $().ready(function(){
     
     ko.applyBindings(VIEWMODEL);
     
+    
+    
 });
 
 

@@ -10,6 +10,11 @@ import java.security.NoSuchAlgorithmException;
  */
 public class SecurityUtils {
     
+    /**
+     * Performs the SHA digest on a string.
+     * @param str The string to be hashed.
+     * @return the SHA-256 hash of str.
+     */
     public static String SHA(String str){
         try{
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

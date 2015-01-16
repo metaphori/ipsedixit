@@ -44,6 +44,8 @@
             </div>
 
         </form>
+        <% } else { %>
+        <p class="error">You are already logged in.</p>
         <% } %>
 
         <%@ include file="/WEB-INF/jspf/epilogue.jspf" %>

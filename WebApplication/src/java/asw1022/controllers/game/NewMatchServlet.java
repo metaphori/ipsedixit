@@ -7,8 +7,10 @@ import asw1022.model.dixit.MatchConfiguration;
 import asw1022.model.dixit.Player;
 import asw1022.repositories.CardRepository;
 import asw1022.repositories.IRepository;
+import asw1022.utils.ValidationError;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -36,7 +38,7 @@ public class NewMatchServlet extends BaseServlet {
         try {
             ServletContext app = getServletContext();
             String cardDB = app.getRealPath(app.getInitParameter("cardDB"));
-            this.crepo = new CardRepository(cardDB);
+            this.crepo = CardRepository.getInstance(cardDB);
             
             // We can read all the cards during initialization
             this.cards = crepo.readAll();        
@@ -88,6 +90,7 @@ public class NewMatchServlet extends BaseServlet {
         HttpSession user = request.getSession(false);
         ServletContext app = getServletContext();
         String matchname = null;
+        List<ValidationError> errors = new ArrayList<ValidationError>();
         HashMap<String,GameExecution> matches = (HashMap<String, GameExecution>)
             getServletContext().getAttribute("Matches");
         
@@ -95,18 +98,49 @@ public class NewMatchServlet extends BaseServlet {
             if(user==null || user.getAttribute("username")==null){ 
                 // User not logged
                 request.setAttribute("msg", "You must be logged in to perform this action.");
+                request.getRequestDispatcher("index.jsp").forward(request, response); 
                 return null;
             }
         
             // 1) Prepare data
             String username = user.getAttribute("username").toString();
             String matchTitle = request.getParameter("matchtitle");
+            String numPys = request.getParameter("numplayers");
+            String numPts = request.getParameter("npoints"); 
+            String numCds = request.getParameter("ncardsforplayer");
+            
+            if(matchTitle==null || matchTitle.trim().length()==0){
+                errors.add(new ValidationError("matchtitle","The title of the match must be provided."));
+            }
+            if(numPys==null || numPys.isEmpty()){
+                errors.add(new ValidationError("numplayers","The number of players must be provided."));
+            } else if(!numPys.matches("[1-9]|1[1-5]?")){
+                errors.add(new ValidationError("numplayers","The number of players must be > 0 and < 16."));
+            }
+            if(numPts==null || numPts.isEmpty()){
+                errors.add(new ValidationError("npoints","The number of points must be provided."));
+            } else if(!numPts.matches("[1-9][0-9]?")){
+                errors.add(new ValidationError("npoints","The number of points must be > 0 and < 99."));
+            }
+            if(numCds==null || numCds.isEmpty()){
+                errors.add(new ValidationError("ncardsforplayer","The number of cards must be provided."));
+            } else if(!numCds.matches("[1-9]")){
+                errors.add(new ValidationError("ncardsforplayer","The number of cards must be > 0 and < 10."));
+            }            
+            
+            if(errors.size()>0){
+                request.setAttribute("Errors", errors);
+                return null;
+            }
+            
+            matchTitle = matchTitle.trim();
             int numplayers = Integer.parseInt(request.getParameter("numplayers"));
             int numpoints = Integer.parseInt(request.getParameter("npoints"));
             int numcards = Integer.parseInt(request.getParameter("ncardsforplayer"));
             String visibilityStr = request.getParameter("visibility");
             MatchConfiguration.MatchVisibility visibility = visibilityStr.equals("all") ?
                     MatchConfiguration.MatchVisibility.All : MatchConfiguration.MatchVisibility.SecretUrl;
+            
             
             // 2) Create new match configuration
             MatchConfiguration m = new MatchConfiguration();
